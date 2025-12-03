@@ -80,7 +80,7 @@ const BookingWidget: React.FC = () => {
             }
         } catch (err) {
             console.error("Booking Error", err);
-            setError("Failed to book appointment. Please try again.");
+            setError(t('booking.error_booking'));
             setLoading(false);
         }
     };
@@ -123,9 +123,9 @@ const BookingWidget: React.FC = () => {
 
                     {success ? (
                         <div className="text-center py-5">
-                            <h2 className="text-success mb-3">Booking Confirmed!</h2>
-                            <p>Thank you, {guestData.firstName}. Your appointment has been scheduled.</p>
-                            <Button variant="primary" onClick={() => window.location.reload()}>Book Another</Button>
+                            <h2 className="text-success mb-3">{t('booking.booking_confirmed')}</h2>
+                            <p>{t('booking.thank_you', { name: guestData.firstName })}</p>
+                            <Button variant="primary" onClick={() => window.location.reload()}>{t('booking.book_another')}</Button>
                         </div>
                     ) : (
                         <>

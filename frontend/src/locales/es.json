@@ -16,7 +16,15 @@
         "select_service": "Selecciona un Servicio",
         "select_time": "Elige Fecha y Hora",
         "your_details": "Tus Datos",
-        "confirmation": "Confirmación"
+        "confirmation": "Confirmación",
+        "select_date": "Seleccionar Fecha",
+        "available_slots": "Horarios Disponibles",
+        "error_loading": "Error al cargar horarios. Intente otra fecha.",
+        "no_availability": "Sin disponibilidad.",
+        "booking_confirmed": "¡Reserva Confirmada!",
+        "thank_you": "Gracias, {{name}}. Tu turno ha sido agendado.",
+        "book_another": "Reservar Otro",
+        "error_booking": "Error al reservar. Por favor intenta de nuevo."
     },
     "nav": {
         "dashboard": "Panel de Control",

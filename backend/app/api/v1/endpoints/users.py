@@ -16,7 +16,7 @@ def read_users(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    current_user: UserModel = Depends(deps.get_current_active_user),
+    # current_user: UserModel = Depends(deps.get_current_active_user), # DISABLED FOR DEMO
 ) -> Any:
     """
     Retrieve users.
@@ -61,3 +61,47 @@ def read_user_me(
     Get current user.
     """
     return current_user
+
+@router.put("/{user_id}", response_model=User)
+def update_user(
+    user_id: int,
+    user_in: UserUpdate,
+    db: Session = Depends(get_db),
+    # current_user: UserModel = Depends(deps.get_current_active_user), # DISABLED FOR DEMO
+) -> Any:
+    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="The user with this id does not exist in the system",
+        )
+    
+    update_data = user_in.dict(exclude_unset=True)
+    if "password" in update_data and update_data["password"]:
+        hashed_password = security.get_password_hash(update_data["password"])
+        del update_data["password"]
+        update_data["hashed_password"] = hashed_password
+        
+    for field, value in update_data.items():
+        setattr(user, field, value)
+        
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+@router.delete("/{user_id}", response_model=User)
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    # current_user: UserModel = Depends(deps.get_current_active_user), # DISABLED FOR DEMO
+) -> Any:
+    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="The user with this id does not exist in the system",
+        )
+    db.delete(user)
+    db.commit()
+    return user

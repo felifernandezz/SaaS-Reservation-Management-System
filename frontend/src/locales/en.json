@@ -16,7 +16,15 @@
         "select_service": "Select Service",
         "select_time": "Select Date & Time",
         "your_details": "Your Details",
-        "confirmation": "Confirmation"
+        "confirmation": "Confirmation",
+        "select_date": "Select Date",
+        "available_slots": "Available Slots",
+        "error_loading": "Error loading slots. Try another date.",
+        "no_availability": "No availability.",
+        "booking_confirmed": "Booking Confirmed!",
+        "thank_you": "Thank you, {{name}}. Your appointment has been scheduled.",
+        "book_another": "Book Another",
+        "error_booking": "Failed to book appointment. Please try again."
     },
     "nav": {
         "dashboard": "Dashboard",

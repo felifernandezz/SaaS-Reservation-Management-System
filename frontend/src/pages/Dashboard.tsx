@@ -116,8 +116,12 @@ const Dashboard: React.FC = () => {
                         </Card.Header>
                         <Card.Body>
                             <div className="d-grid gap-2">
-                                <button className="btn btn-primary">{t('dashboard_stats.new_appointment')}</button>
-                                <button className="btn btn-outline-secondary">{t('dashboard_stats.add_client')}</button>
+                                <a href="/book" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+                                    {t('dashboard_stats.new_appointment')}
+                                </a>
+                                <a href="/staff" className="btn btn-outline-secondary">
+                                    {t('dashboard_stats.add_client')}
+                                </a>
                             </div>
                         </Card.Body>
                     </Card>

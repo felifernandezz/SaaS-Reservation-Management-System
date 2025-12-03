@@ -51,3 +51,32 @@ def read_service(service_id: int, db: Session = Depends(get_db)):
     if service is None:
         raise HTTPException(status_code=404, detail="Service not found")
     return service
+
+@router.put("/{service_id}", response_model=Service)
+def update_service(
+    service_id: int,
+    service_in: ServiceUpdate,
+    db: Session = Depends(get_db)
+):
+    service = db.query(ServiceModel).filter(ServiceModel.id == service_id).first()
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+    
+    update_data = service_in.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(service, field, value)
+    
+    db.add(service)
+    db.commit()
+    db.refresh(service)
+    return service
+
+@router.delete("/{service_id}", response_model=Service)
+def delete_service(service_id: int, db: Session = Depends(get_db)):
+    service = db.query(ServiceModel).filter(ServiceModel.id == service_id).first()
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+    
+    db.delete(service)
+    db.commit()
+    return service

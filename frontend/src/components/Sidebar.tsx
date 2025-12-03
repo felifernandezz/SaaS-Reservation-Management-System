@@ -15,27 +15,27 @@ const Sidebar = () => {
             <Nav className="flex-column mb-auto" variant="pills">
                 <Nav.Item>
                     <Nav.Link as={NavLink} to="/dashboard" className="text-white">
-                        <FaHome className="me-2" /> {t('dashboard')}
+                        <FaHome className="me-2" /> {t('nav.dashboard')}
                     </Nav.Link>
                 </Nav.Item>
                 <Nav.Item>
                     <Nav.Link as={NavLink} to="/calendar" className="text-white">
-                        <FaCalendarAlt className="me-2" /> {t('calendar')}
+                        <FaCalendarAlt className="me-2" /> {t('nav.calendar')}
                     </Nav.Link>
                 </Nav.Item>
                 <Nav.Item>
                     <Nav.Link as={NavLink} to="/services" className="text-white">
-                        <FaCut className="me-2" /> {t('services')}
+                        <FaCut className="me-2" /> {t('nav.services')}
                     </Nav.Link>
                 </Nav.Item>
                 <Nav.Item>
                     <Nav.Link as={NavLink} to="/staff" className="text-white">
-                        <FaUsers className="me-2" /> {t('staff')}
+                        <FaUsers className="me-2" /> {t('nav.staff')}
                     </Nav.Link>
                 </Nav.Item>
                 <Nav.Item>
                     <Nav.Link as={NavLink} to="/settings" className="text-white">
-                        <FaCog className="me-2" /> {t('settings')}
+                        <FaCog className="me-2" /> {t('nav.settings')}
                     </Nav.Link>
                 </Nav.Item>
             </Nav>

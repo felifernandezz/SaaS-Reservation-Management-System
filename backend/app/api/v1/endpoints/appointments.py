@@ -106,4 +106,30 @@ def confirm_payment(
     appointment.payment_id = "mock_payment_123"
     
     db.commit()
+    
+    # Send Notification
+    try:
+        from app.services.notification import get_notification_provider
+        provider = get_notification_provider()
+        
+        # Ensure relationships are loaded
+        # We might need to refresh or query again if lazy loading is an issue, 
+        # but appointment.customer and appointment.service should be accessible if we didn't detach.
+        # To be safe, let's query explicitly or rely on lazy loading if session is open.
+        
+        customer_name = appointment.customer.full_name if appointment.customer else "Cliente"
+        service_name = appointment.service.name if appointment.service else "Servicio"
+        date_time = appointment.start_time.strftime("%Y-%m-%d %H:%M")
+        email = appointment.customer.email if appointment.customer else "unknown"
+        
+        provider.send_confirmation(
+            to=email,
+            customer_name=customer_name,
+            service_name=service_name,
+            date_time=date_time
+        )
+    except Exception as e:
+        print(f"Failed to send notification: {e}")
+        # Don't fail the request if notification fails
+    
     return {"status": "success", "message": "Payment confirmed"}
