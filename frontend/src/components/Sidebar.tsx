@@ -1,15 +1,20 @@
-import { Nav } from 'react-bootstrap';
+import { Nav, Image } from 'react-bootstrap';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FaHome, FaCalendarAlt, FaCog, FaUsers, FaCut } from 'react-icons/fa';
+import { useTheme } from '../context/ThemeContext';
 
 const Sidebar = () => {
     const { t } = useTranslation();
+    const theme = useTheme();
 
     return (
         <div className="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" style={{ width: '280px', minHeight: '100vh' }}>
             <a href="/" className="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-                <span className="fs-4">SaaS Admin</span>
+                {theme?.logoUrl ? (
+                    <Image src={theme.logoUrl} alt={theme.name} height="40" className="me-2" />
+                ) : null}
+                <span className="fs-4">{theme?.name || 'SaaS Admin'}</span>
             </a>
             <hr />
             <Nav className="flex-column mb-auto" variant="pills">
