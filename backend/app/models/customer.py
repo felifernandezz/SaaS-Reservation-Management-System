@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 
@@ -10,4 +10,8 @@ class Customer(Base):
     email = Column(String(255), index=True, nullable=False)
     phone = Column(String(50), nullable=True)
     
+    # Auth Fields
+    hashed_password = Column(String(255), nullable=True) # Null = Guest
+    is_active = Column(Boolean, default=True)
+
     tenant = relationship("Tenant")

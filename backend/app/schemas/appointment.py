@@ -26,7 +26,8 @@ class AppointmentBase(BaseModel):
     # end_time is calculated
 
 class AppointmentCreate(AppointmentBase):
-    guest_data: CustomerCreate
+    guest_data: Optional[CustomerCreate] = None
+    customer_id: Optional[int] = None
 
 class Appointment(AppointmentBase):
     id: int

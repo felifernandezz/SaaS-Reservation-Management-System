@@ -40,28 +40,43 @@ def create_appointment(
     tenant_id: int = Query(..., description="ID del negocio"),
     db: Session = Depends(deps.get_db)
 ):
+    from app.models.subscription import Subscription # Import here to avoid circular deps
+
     # 1. Validar Tenant
     tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
-    # 2. Lógica Guest Checkout
-    customer_email = appointment_in.guest_data.email
-    customer = db.query(Customer).filter(
-        Customer.email == customer_email, 
-        Customer.tenant_id == tenant_id
-    ).first()
+    # 2. Identificar Cliente (Guest vs Member)
+    customer = None
+    is_member = False
     
-    if not customer:
-        customer = Customer(
-            tenant_id=tenant_id,
-            full_name=appointment_in.guest_data.full_name,
-            email=customer_email,
-            phone=appointment_in.guest_data.phone
-        )
-        db.add(customer)
-        db.commit()
-        db.refresh(customer)
+    if appointment_in.customer_id:
+        # Flow Miembro Logueado
+        customer = db.query(Customer).filter(Customer.id == appointment_in.customer_id).first()
+        if not customer:
+            raise HTTPException(status_code=404, detail="Customer not found")
+        is_member = True
+    elif appointment_in.guest_data:
+        # Flow Guest
+        customer_email = appointment_in.guest_data.email
+        customer = db.query(Customer).filter(
+            Customer.email == customer_email, 
+            Customer.tenant_id == tenant_id
+        ).first()
+        
+        if not customer:
+            customer = Customer(
+                tenant_id=tenant_id,
+                full_name=appointment_in.guest_data.full_name,
+                email=customer_email,
+                phone=appointment_in.guest_data.phone
+            )
+            db.add(customer)
+            db.commit()
+            db.refresh(customer)
+    else:
+        raise HTTPException(status_code=400, detail="Must provide guest_data or customer_id")
 
     # 3. Validar Servicio
     service = db.query(Service).filter(Service.id == appointment_in.service_id).first()
@@ -83,15 +98,38 @@ def create_appointment(
     # 5. Calcular Fin
     end_time = appointment_in.start_time + timedelta(minutes=service.duration_minutes)
 
-    # 6. Crear Reserva
-    # Nota: Staff ID queda NULL por ahora (asignación manual o automática futura)
+    # 6. Lógica de Créditos (Solo para Miembros)
+    initial_status = AppointmentStatus.PENDING_PAYMENT
+    payment_url = f"/pay-mock/TEMP_ID" # Will update after commit
+    
+    if is_member:
+        # Buscar suscripción activa con créditos
+        subscription = db.query(Subscription).filter(
+            Subscription.customer_id == customer.id,
+            Subscription.is_active == True,
+            Subscription.remaining_credits > 0,
+            Subscription.expires_at >= appointment_in.start_time
+        ).first()
+        
+        if subscription:
+            # Descontar crédito
+            subscription.remaining_credits -= 1
+            initial_status = AppointmentStatus.CONFIRMED
+            payment_url = None # No payment needed
+            # db.add(subscription) # Implicit in commit
+        else:
+            # Miembro sin créditos -> Paga como guest o error?
+            # Por ahora, dejamos que pague como guest
+            pass
+
+    # 7. Crear Reserva
     appointment = AppointmentModel(
         tenant_id=tenant_id,
         service_id=service.id,
         customer_id=customer.id,
         start_time=appointment_in.start_time,
         end_time=end_time,
-        status=AppointmentStatus.PENDING_PAYMENT,
+        status=initial_status,
         staff_id=None 
     )
     
@@ -99,10 +137,13 @@ def create_appointment(
     db.commit()
     db.refresh(appointment)
     
+    if initial_status == AppointmentStatus.PENDING_PAYMENT:
+        payment_url = f"/pay-mock/{appointment.id}"
+    
     return {
         "id": appointment.id,
         "status": appointment.status,
-        "payment_url": f"/pay-mock/{appointment.id}" 
+        "payment_url": payment_url
     }
 
 @router.post("/{appointment_id}/confirm-payment", response_model=Any)

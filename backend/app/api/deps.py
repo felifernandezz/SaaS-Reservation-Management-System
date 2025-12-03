@@ -39,3 +39,29 @@ def get_current_active_user(
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+from app.models.customer import Customer
+
+def get_current_customer(
+    db: Session = Depends(get_db), token: str = Depends(reusable_oauth2)
+) -> Customer:
+    try:
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
+        )
+        token_data = TokenPayload(**payload)
+    except (jwt.JWTError, ValidationError):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Could not validate credentials",
+        )
+    
+    # Check if token is for customer (optional: add scope/type check in token)
+    # For now, we assume ID collision is unlikely or handled by separate tables
+    
+    user = db.query(Customer).filter(Customer.id == token_data.sub).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive customer")
+    return user

@@ -6,3 +6,5 @@ from .resource import Resource, ResourceType
 from .appointment import Appointment, AppointmentStatus
 from .schedule import Schedule
 from .customer import Customer
+from .plan import Plan
+from .subscription import Subscription

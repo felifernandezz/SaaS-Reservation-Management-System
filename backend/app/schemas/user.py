@@ -40,3 +40,4 @@ class Token(BaseModel):
 
 class TokenPayload(BaseModel):
     sub: Optional[int] = None
+    sub_type: Optional[str] = None
