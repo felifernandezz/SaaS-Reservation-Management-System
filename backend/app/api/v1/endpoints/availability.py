@@ -13,15 +13,15 @@ router = APIRouter()
 def check_availability(
     service_id: int,
     date: date,
-    current_user = Depends(deps.get_current_active_user), # Optional: require auth
+    # CAMBIO: Eliminada dependencia de autenticación obligatoria.
+    # Se agrega tenant_id como parámetro explícito para contexto público.
+    tenant_id: int = Query(..., description="ID del negocio"), 
     db: Session = Depends(get_db)
 ):
     """
     Get available time slots for a service on a specific date.
+    Public endpoint (Guests allowed).
     """
-    # Use the tenant_id from the current user
-    tenant_id = current_user.tenant_id
-    
     slots = get_availability(
         db=db,
         tenant_id=tenant_id,
