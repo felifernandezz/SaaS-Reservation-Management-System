@@ -1,0 +1,39 @@
+{
+    "welcome": "Bienvenido al Sistema de Gestión de Reservas SaaS",
+    "backend_says": "El Backend dice",
+    "loading": "Cargando...",
+    "get_started": "Comenzar",
+    "language": "Idioma",
+    "english": "Inglés",
+    "spanish": "Español",
+    "settings": "Configuración",
+    "common": {
+        "back": "Atrás",
+        "next": "Siguiente",
+        "confirm": "Confirmar"
+    },
+    "booking": {
+        "select_service": "Selecciona un Servicio",
+        "select_time": "Elige Fecha y Hora",
+        "your_details": "Tus Datos",
+        "confirmation": "Confirmación"
+    },
+    "nav": {
+        "dashboard": "Panel de Control",
+        "calendar": "Calendario",
+        "services": "Servicios",
+        "staff": "Personal",
+        "settings": "Configuración"
+    },
+    "dashboard_stats": {
+        "appointments_today": "Turnos de Hoy",
+        "revenue_est": "Ingresos (Est.)",
+        "active_staff": "Personal Activo",
+        "pending": "Pendientes",
+        "recent_activity": "Actividad Reciente",
+        "no_activity": "No hay actividad reciente para mostrar.",
+        "quick_actions": "Acciones Rápidas",
+        "new_appointment": "Nuevo Turno",
+        "add_client": "Agregar Cliente"
+    }
+}

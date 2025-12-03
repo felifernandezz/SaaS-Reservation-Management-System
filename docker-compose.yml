@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: saas_backend
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=mysql+pymysql://user:password@db_core/saas_db
+      - MONGODB_URL=mongodb://db_aux:27017
+      - SECRET_KEY=supersecretkey
+    depends_on:
+      - db_core
+      - db_aux
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build: ./frontend
+    container_name: saas_frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:5173" # Vite default port
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+  db_core:
+    image: mysql:8.0
+    container_name: saas_db_core
+    restart: always
+    environment:
+      MYSQL_DATABASE: saas_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  db_aux:
+    image: mongo:6.0
+    container_name: saas_db_aux
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mysql_data:
+  mongo_data:

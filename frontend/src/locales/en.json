@@ -1,0 +1,39 @@
+{
+    "welcome": "Welcome to SaaS Reservation System",
+    "backend_says": "Backend says",
+    "loading": "Loading...",
+    "get_started": "Get Started",
+    "language": "Language",
+    "english": "English",
+    "spanish": "Spanish",
+    "settings": "Settings",
+    "common": {
+        "back": "Back",
+        "next": "Next",
+        "confirm": "Confirm"
+    },
+    "booking": {
+        "select_service": "Select Service",
+        "select_time": "Select Date & Time",
+        "your_details": "Your Details",
+        "confirmation": "Confirmation"
+    },
+    "nav": {
+        "dashboard": "Dashboard",
+        "calendar": "Calendar",
+        "services": "Services",
+        "staff": "Staff",
+        "settings": "Settings"
+    },
+    "dashboard_stats": {
+        "appointments_today": "Appointments Today",
+        "revenue_est": "Revenue (Est.)",
+        "active_staff": "Active Staff",
+        "pending": "Pending",
+        "recent_activity": "Recent Activity",
+        "no_activity": "No recent activity to show.",
+        "quick_actions": "Quick Actions",
+        "new_appointment": "New Appointment",
+        "add_client": "Add Client"
+    }
+}
