@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Form, Button, Spinner } from 'react-bootstrap';
+import { Row, Col, Card, Form, Button, Spinner, Alert } from 'react-bootstrap';
 import axios from 'axios';
 
 interface Props {
@@ -11,9 +11,10 @@ const DateTimeSelection: React.FC<Props> = ({ serviceId, onSelect }) => {
     const [selectedDate, setSelectedDate] = useState<string>('');
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
-    // Set default date to tomorrow for demo
+    // Default: Mañana
     useEffect(() => {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -28,18 +29,23 @@ const DateTimeSelection: React.FC<Props> = ({ serviceId, onSelect }) => {
 
     const fetchAvailability = async (date: string) => {
         setLoading(true);
-        try {
-            // Real API Call
-            // const response = await axios.get(`/api/v1/availability/?service_id=${serviceId}&date=${date}`);
-            // setAvailableSlots(response.data);
+        setError(null);
+        setAvailableSlots([]);
 
-            // Mock Data for now (simulating backend response)
-            setTimeout(() => {
-                setAvailableSlots(['09:00', '09:30', '10:00', '11:30', '14:00', '15:30', '16:00']);
-                setLoading(false);
-            }, 600);
-        } catch (error) {
-            console.error("Error fetching availability", error);
+        try {
+            // NOTA: tenant_id=1 hardcodeado temporalmente, debe venir de props o contexto
+            const response = await axios.get(`/api/v1/availability/`, {
+                params: {
+                    service_id: serviceId,
+                    date: date,
+                    tenant_id: 1
+                }
+            });
+            setAvailableSlots(response.data);
+        } catch (err) {
+            console.error("Error fetching availability", err);
+            setError("Error al cargar horarios. Intente otra fecha.");
+        } finally {
             setLoading(false);
         }
     };
@@ -54,7 +60,7 @@ const DateTimeSelection: React.FC<Props> = ({ serviceId, onSelect }) => {
             <Col md={6}>
                 <Card className="shadow-sm mb-3">
                     <Card.Body>
-                        <h5 className="fw-bold mb-3">Select Date</h5>
+                        <h5 className="fw-bold mb-3">Seleccionar Fecha</h5>
                         <Form.Control
                             type="date"
                             value={selectedDate}
@@ -67,11 +73,14 @@ const DateTimeSelection: React.FC<Props> = ({ serviceId, onSelect }) => {
             <Col md={6}>
                 <Card className="shadow-sm h-100">
                     <Card.Body>
-                        <h5 className="fw-bold mb-3">Available Times</h5>
+                        <h5 className="fw-bold mb-3">Horarios Disponibles</h5>
+                        {error && <Alert variant="warning" className="py-2 fs-6">{error}</Alert>}
                         {loading ? (
-                            <div className="text-center py-4"><Spinner animation="border" size="sm" /></div>
+                            <div className="text-center py-4">
+                                <Spinner animation="border" size="sm" variant="primary" />
+                            </div>
                         ) : availableSlots.length > 0 ? (
-                            <div className="d-flex flex-wrap gap-2">
+                            <div className="d-flex flex-wrap gap-2" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                                 {availableSlots.map(time => (
                                     <Button
                                         key={time}
@@ -85,7 +94,9 @@ const DateTimeSelection: React.FC<Props> = ({ serviceId, onSelect }) => {
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-muted text-center">No slots available for this date.</p>
+                            <div className="text-center py-4 text-muted">
+                                <p>Sin disponibilidad.</p>
+                            </div>
                         )}
                     </Card.Body>
                 </Card>

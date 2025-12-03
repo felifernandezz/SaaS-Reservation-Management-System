@@ -70,7 +70,10 @@ def get_availability(
     start_of_day = datetime.combine(query_date, time.min)
     end_of_day = datetime.combine(query_date, time.max)
     
-    existing_appointments = db.query(Appointment).filter(
+    from sqlalchemy.orm import joinedload
+    existing_appointments = db.query(Appointment).options(
+        joinedload(Appointment.service).joinedload(Service.steps)
+    ).filter(
         Appointment.tenant_id == tenant_id,
         Appointment.status != AppointmentStatus.CANCELLED,
         Appointment.start_time >= start_of_day,

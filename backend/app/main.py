@@ -40,22 +40,24 @@ async def startup_event():
             time.sleep(retry_interval)
 
     # Retry logic for MongoDB
-    for i in range(max_retries):
-        try:
-            print(f"Attempting to connect to MongoDB (Attempt {i+1}/{max_retries})...")
-            await connect_to_mongo()
-            print("MongoDB connection successful.")
-            break
-        except Exception as e:
-            print(f"MongoDB connection failed: {e}")
-            if i == max_retries - 1:
-                raise e
-            print(f"Retrying in {retry_interval} seconds...")
-            time.sleep(retry_interval)
+    # Retry logic for MongoDB
+    # for i in range(max_retries):
+    #     try:
+    #         print(f"Attempting to connect to MongoDB (Attempt {i+1}/{max_retries})...")
+    #         await connect_to_mongo()
+    #         print("MongoDB connection successful.")
+    #         break
+    #     except Exception as e:
+    #         print(f"MongoDB connection failed: {e}")
+    #         if i == max_retries - 1:
+    #             raise e
+    #         print(f"Retrying in {retry_interval} seconds...")
+    #         time.sleep(retry_interval)
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    await close_mongo_connection()
+    # await close_mongo_connection()
+    pass
 
 
 @app.get("/")

@@ -69,7 +69,8 @@ const BookingWidget: React.FC = () => {
                 }
             };
 
-            const response = await axios.post('/api/v1/appointments/', payload);
+            const TENANT_ID_DEMO = 1;
+            const response = await axios.post(`/api/v1/appointments/?tenant_id=${TENANT_ID_DEMO}`, payload);
 
             if (response.data.payment_url) {
                 window.location.href = response.data.payment_url;
