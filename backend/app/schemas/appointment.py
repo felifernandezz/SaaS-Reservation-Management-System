@@ -17,7 +17,7 @@ class Customer(CustomerBase):
     tenant_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Appointment Schemas
 class AppointmentBase(BaseModel):
@@ -40,4 +40,4 @@ class Appointment(AppointmentBase):
     customer: Optional[Customer] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True

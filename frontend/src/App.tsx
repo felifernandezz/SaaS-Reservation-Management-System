@@ -7,6 +7,7 @@ import GuestLayout from './layouts/GuestLayout';
 import BookingWidget from './pages/BookingWidget';
 import BookingSuccess from './pages/BookingSuccess';
 import BookingFailure from './pages/BookingFailure';
+import MockPayment from './pages/MockPayment';
 
 function App() {
     return (
@@ -25,6 +26,8 @@ function App() {
                     <Route path="success" element={<BookingSuccess />} />
                     <Route path="failure" element={<BookingFailure />} />
                 </Route>
+
+                <Route path="/pay-mock/:id" element={<MockPayment />} />
             </Routes>
         </Router>
     );

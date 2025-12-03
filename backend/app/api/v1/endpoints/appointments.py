@@ -74,16 +74,48 @@ def create_appointment(
     db.commit()
     db.refresh(appointment)
     
+    # Ensure customer is loaded for preference creation
+    # We can just pass the customer object we already have
+    appointment.customer = customer
+    
     # 6. Generate Payment Preference
     from app.services.payment import create_preference
-    preference = create_preference(appointment, service)
+    preference = create_preference(
+        appointment_id=appointment.id,
+        service_price=service.price,
+        service_name=service.name,
+        customer_name=customer.full_name,
+        customer_email=customer.email
+    )
     
     # We can return the preference URL directly or wrap it
     # For now, let's return the appointment with the init_point as a custom field or similar?
     # Or better, change the response model to include payment_url.
     # But for quick iteration, let's just return a dict or modify the schema.
     
-    return {
-        **appointment.__dict__,
-        "payment_url": preference["init_point"]
-    }
+    # Create response dictionary
+    # Create response dictionary
+    # Use Pydantic to serialize
+    appointment_pydantic = appointment_schemas.Appointment.from_orm(appointment)
+    response_data = appointment_pydantic.dict()
+    response_data["payment_url"] = preference["init_point"]
+    
+    return response_data
+
+@router.post("/{appointment_id}/confirm-payment", response_model=Any)
+def confirm_payment(
+    appointment_id: int,
+    db: Session = Depends(deps.get_db)
+):
+    appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    appointment.status = AppointmentStatus.CONFIRMED
+    appointment.payment_status = "APPROVED"
+    appointment.payment_id = "mock_payment_123"
+    
+    db.commit()
+    db.refresh(appointment)
+    
+    return {"status": "success", "message": "Payment confirmed"}
