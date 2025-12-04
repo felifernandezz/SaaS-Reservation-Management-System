@@ -9,7 +9,6 @@ const Settings: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Settings State
     const [settings, setSettings] = useState({
         title: '',
         primary_color: '#0d6efd',
@@ -28,6 +27,7 @@ const Settings: React.FC = () => {
             const response = await axios.get('/api/v1/tenants/config', {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            // Cargar datos asegurando que no sean null
             setSettings({
                 title: response.data.title || '',
                 primary_color: response.data.primary_color || '#0d6efd',
@@ -36,7 +36,7 @@ const Settings: React.FC = () => {
                 working_hours_end: response.data.working_hours_end || '18:00'
             });
         } catch (err) {
-            console.error("Error fetching settings", err);
+            console.error(err);
             setError("Failed to load settings.");
         } finally {
             setLoading(false);
@@ -47,16 +47,19 @@ const Settings: React.FC = () => {
         e.preventDefault();
         setSaved(false);
         setError(null);
-
         try {
             const token = localStorage.getItem('token');
             await axios.put('/api/v1/tenants/config', settings, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setSaved(true);
-            setTimeout(() => setSaved(false), 3000);
+
+            // Actualizar variables CSS en caliente para ver el cambio
+            document.documentElement.style.setProperty('--bs-primary', settings.primary_color);
+            document.title = settings.title;
+
         } catch (err) {
-            console.error("Error saving settings", err);
+            console.error(err);
             setError("Failed to save settings.");
         }
     };
@@ -66,95 +69,40 @@ const Settings: React.FC = () => {
     return (
         <Container fluid className="p-4">
             <h2 className="mb-4 text-dark fw-bold">{t('nav.settings')}</h2>
-
-            {saved && (
-                <Alert variant="success" onClose={() => setSaved(false)} dismissible>
-                    Settings saved successfully!
-                </Alert>
-            )}
-
+            {saved && <Alert variant="success" dismissible onClose={() => setSaved(false)}>Saved!</Alert>}
             {error && <Alert variant="danger">{error}</Alert>}
 
-            <Row>
-                <Col md={6}>
-                    <Card className="shadow-sm border-0 mb-4">
-                        <Card.Header className="bg-white border-0 py-3">
-                            <h5 className="mb-0 fw-bold">General Configuration</h5>
-                        </Card.Header>
-                        <Card.Body>
-                            <Form onSubmit={handleSave}>
+            <Card className="shadow-sm border-0">
+                <Card.Body>
+                    <Form onSubmit={handleSave}>
+                        <Row>
+                            <Col md={6}>
+                                <h5 className="mb-3">Branding</h5>
                                 <Form.Group className="mb-3">
                                     <Form.Label>Website Title</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        value={settings.title}
-                                        onChange={(e) => setSettings({ ...settings, title: e.target.value })}
-                                    />
+                                    <Form.Control type="text" value={settings.title} onChange={e => setSettings({ ...settings, title: e.target.value })} />
                                 </Form.Group>
-
                                 <Form.Group className="mb-3">
                                     <Form.Label>Primary Color</Form.Label>
-                                    <Form.Control
-                                        type="color"
-                                        value={settings.primary_color}
-                                        onChange={(e) => setSettings({ ...settings, primary_color: e.target.value })}
-                                    />
+                                    <Form.Control type="color" value={settings.primary_color} onChange={e => setSettings({ ...settings, primary_color: e.target.value })} title="Choose your brand color" />
                                 </Form.Group>
-
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Logo URL</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        value={settings.logo_url}
-                                        onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })}
-                                    />
-                                </Form.Group>
-
-                                <Button variant="primary" type="submit">
-                                    Save Changes
-                                </Button>
-                            </Form>
-                        </Card.Body>
-                    </Card>
-                </Col>
-
-                <Col md={6}>
-                    <Card className="shadow-sm border-0 mb-4">
-                        <Card.Header className="bg-white border-0 py-3">
-                            <h5 className="mb-0 fw-bold">Default Working Hours</h5>
-                        </Card.Header>
-                        <Card.Body>
-                            <Form>
+                            </Col>
+                            <Col md={6}>
+                                <h5 className="mb-3">Global Working Hours</h5>
                                 <Row>
                                     <Col>
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>Start Time</Form.Label>
-                                            <Form.Control
-                                                type="time"
-                                                value={settings.working_hours_start}
-                                                onChange={(e) => setSettings({ ...settings, working_hours_start: e.target.value })}
-                                            />
-                                        </Form.Group>
+                                        <Form.Control type="time" value={settings.working_hours_start} onChange={e => setSettings({ ...settings, working_hours_start: e.target.value })} />
                                     </Col>
                                     <Col>
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>End Time</Form.Label>
-                                            <Form.Control
-                                                type="time"
-                                                value={settings.working_hours_end}
-                                                onChange={(e) => setSettings({ ...settings, working_hours_end: e.target.value })}
-                                            />
-                                        </Form.Group>
+                                        <Form.Control type="time" value={settings.working_hours_end} onChange={e => setSettings({ ...settings, working_hours_end: e.target.value })} />
                                     </Col>
                                 </Row>
-                                <Form.Text className="text-muted">
-                                    This sets the visible range in the calendar.
-                                </Form.Text>
-                            </Form>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
+                            </Col>
+                        </Row>
+                        <Button type="submit" variant="primary" className="mt-3">Save Changes</Button>
+                    </Form>
+                </Card.Body>
+            </Card>
         </Container>
     );
 };

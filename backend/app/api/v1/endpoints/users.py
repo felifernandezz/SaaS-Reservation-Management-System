@@ -1,6 +1,5 @@
 from typing import Any, List
-from fastapi import APIRouter, Body, Depends, HTTPException
-from fastapi.encoders import jsonable_encoder
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.api import deps
@@ -16,12 +15,14 @@ def read_users(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    # current_user: UserModel = Depends(deps.get_current_active_user), # DISABLED FOR DEMO
+    current_user: UserModel = Depends(deps.get_current_active_user),
 ) -> Any:
     """
-    Retrieve users.
+    Retrieve users (staff) belonging to the current user's tenant.
     """
-    users = db.query(UserModel).offset(skip).limit(limit).all()
+    users = db.query(UserModel).filter(
+        UserModel.tenant_id == current_user.tenant_id
+    ).offset(skip).limit(limit).all()
     return users
 
 @router.post("/", response_model=User)
@@ -32,57 +33,47 @@ def create_user(
     current_user: UserModel = Depends(deps.get_current_active_user),
 ) -> Any:
     """
-    Create new user.
+    Create new user (Staff). Enforces current tenant.
     """
-    print(f"DEBUG: create_user called with {user_in}")
     user = db.query(UserModel).filter(UserModel.email == user_in.email).first()
     if user:
-        print("DEBUG: User already exists")
         raise HTTPException(
             status_code=400,
-            detail="The user with this username already exists in the system.",
+            detail="The user with this email already exists.",
         )
     
     try:
+        # Force tenant_id to match the creator's tenant
         db_user = UserModel(
             email=user_in.email,
             hashed_password=security.get_password_hash(user_in.password),
             full_name=user_in.full_name,
-            tenant_id=user_in.tenant_id,
+            tenant_id=current_user.tenant_id, 
             is_superuser=user_in.is_superuser,
+            is_active=True
         )
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
-        print(f"DEBUG: User created successfully: {db_user.id}")
         return db_user
     except Exception as e:
-        print(f"DEBUG: Error creating user: {e}")
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-
-@router.get("/me", response_model=User)
-def read_user_me(
-    current_user: UserModel = Depends(deps.get_current_active_user),
-) -> Any:
-    """
-    Get current user.
-    """
-    return current_user
+        raise HTTPException(status_code=500, detail=f"Error creating user: {str(e)}")
 
 @router.put("/{user_id}", response_model=User)
 def update_user(
     user_id: int,
     user_in: UserUpdate,
     db: Session = Depends(get_db),
-    # current_user: UserModel = Depends(deps.get_current_active_user), # DISABLED FOR DEMO
+    current_user: UserModel = Depends(deps.get_current_active_user),
 ) -> Any:
-    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    user = db.query(UserModel).filter(
+        UserModel.id == user_id, 
+        UserModel.tenant_id == current_user.tenant_id
+    ).first()
+    
     if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="The user with this id does not exist in the system",
-        )
+        raise HTTPException(status_code=404, detail="User not found")
     
     update_data = user_in.dict(exclude_unset=True)
     if "password" in update_data and update_data["password"]:
@@ -102,14 +93,19 @@ def update_user(
 def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
-    # current_user: UserModel = Depends(deps.get_current_active_user), # DISABLED FOR DEMO
+    current_user: UserModel = Depends(deps.get_current_active_user),
 ) -> Any:
-    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot delete yourself.")
+
+    user = db.query(UserModel).filter(
+        UserModel.id == user_id,
+        UserModel.tenant_id == current_user.tenant_id
+    ).first()
+    
     if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="The user with this id does not exist in the system",
-        )
+        raise HTTPException(status_code=404, detail="User not found")
+        
     db.delete(user)
     db.commit()
     return user
