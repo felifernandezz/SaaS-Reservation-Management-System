@@ -14,7 +14,8 @@ const Settings: React.FC = () => {
         primary_color: '#0d6efd',
         logo_url: '',
         working_hours_start: '09:00',
-        working_hours_end: '18:00'
+        working_hours_end: '18:00',
+        cancellation_hours: 24
     });
 
     useEffect(() => {
@@ -33,7 +34,8 @@ const Settings: React.FC = () => {
                 primary_color: response.data.primary_color || '#0d6efd',
                 logo_url: response.data.logo_url || '',
                 working_hours_start: response.data.working_hours_start || '09:00',
-                working_hours_end: response.data.working_hours_end || '18:00'
+                working_hours_end: response.data.working_hours_end || '18:00',
+                cancellation_hours: response.data.cancellation_hours || 24
             });
         } catch (err) {
             console.error(err);
@@ -89,7 +91,7 @@ const Settings: React.FC = () => {
                             </Col>
                             <Col md={6}>
                                 <h5 className="mb-3">Global Working Hours</h5>
-                                <Row>
+                                <Row className="mb-3">
                                     <Col>
                                         <Form.Control type="time" value={settings.working_hours_start} onChange={e => setSettings({ ...settings, working_hours_start: e.target.value })} />
                                     </Col>
@@ -97,6 +99,20 @@ const Settings: React.FC = () => {
                                         <Form.Control type="time" value={settings.working_hours_end} onChange={e => setSettings({ ...settings, working_hours_end: e.target.value })} />
                                     </Col>
                                 </Row>
+
+                                <h5 className="mb-3">Booking Rules</h5>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Cancellation Policy (Hours)</Form.Label>
+                                    <Form.Control
+                                        type="number"
+                                        value={settings.cancellation_hours}
+                                        onChange={e => setSettings({ ...settings, cancellation_hours: parseInt(e.target.value) })}
+                                        min={0}
+                                    />
+                                    <Form.Text className="text-muted">
+                                        Clients can cancel up to this many hours before. (0 = Always allowed)
+                                    </Form.Text>
+                                </Form.Group>
                             </Col>
                         </Row>
                         <Button type="submit" variant="primary" className="mt-3">Save Changes</Button>

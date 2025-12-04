@@ -28,6 +28,7 @@ class AppointmentBase(BaseModel):
 class AppointmentCreate(AppointmentBase):
     guest_data: Optional[CustomerCreate] = None
     customer_id: Optional[int] = None
+    staff_id: Optional[int] = None
 
 class Appointment(AppointmentBase):
     id: int

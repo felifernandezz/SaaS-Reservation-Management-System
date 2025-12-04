@@ -15,6 +15,8 @@ class TenantConfig(BaseModel):
     title: str
     working_hours_start: str
     working_hours_end: str
+    allow_guest_checkout: bool = True
+    cancellation_hours: int = 24
 
 class TenantUpdate(BaseModel):
     primary_color: Optional[str] = None
@@ -22,6 +24,7 @@ class TenantUpdate(BaseModel):
     title: Optional[str] = None
     working_hours_start: Optional[str] = None
     working_hours_end: Optional[str] = None
+    cancellation_hours: Optional[int] = None
 
 @router.get("/config", response_model=TenantConfig)
 def get_tenant_config(
@@ -53,7 +56,9 @@ def get_tenant_config(
         "logo_url": tenant.logo_url,
         "title": tenant.website_title,
         "working_hours_start": tenant.working_hours_start,
-        "working_hours_end": tenant.working_hours_end
+        "working_hours_end": tenant.working_hours_end,
+        "allow_guest_checkout": tenant.config_guest_checkout,
+        "cancellation_hours": tenant.config_cancellation_hours
     }
 
 @router.put("/config", response_model=TenantConfig)
@@ -82,6 +87,9 @@ def update_tenant_config(
         tenant.working_hours_start = config_in.working_hours_start
     if config_in.working_hours_end:
         tenant.working_hours_end = config_in.working_hours_end
+    
+    if config_in.cancellation_hours is not None:
+        tenant.config_cancellation_hours = config_in.cancellation_hours
         
     db.commit()
     db.refresh(tenant)
@@ -93,5 +101,7 @@ def update_tenant_config(
         "logo_url": tenant.logo_url,
         "title": tenant.website_title,
         "working_hours_start": tenant.working_hours_start,
-        "working_hours_end": tenant.working_hours_end
+        "working_hours_end": tenant.working_hours_end,
+        "allow_guest_checkout": tenant.config_guest_checkout,
+        "cancellation_hours": tenant.config_cancellation_hours
     }

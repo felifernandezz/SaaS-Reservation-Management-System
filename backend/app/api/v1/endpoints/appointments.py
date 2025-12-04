@@ -24,7 +24,10 @@ def read_appointments(
     query = db.query(AppointmentModel).options(
         joinedload(AppointmentModel.customer),
         joinedload(AppointmentModel.service)
-    ).filter(AppointmentModel.tenant_id == tenant_id)
+    ).filter(
+        AppointmentModel.tenant_id == tenant_id,
+        AppointmentModel.status != AppointmentStatus.CANCELLED # Hide cancelled
+    )
     
     if start_date:
         query = query.filter(AppointmentModel.start_time >= start_date)
@@ -130,7 +133,7 @@ def create_appointment(
         start_time=appointment_in.start_time,
         end_time=end_time,
         status=initial_status,
-        staff_id=None 
+        staff_id=appointment_in.staff_id 
     )
     
     db.add(appointment)
@@ -161,3 +164,79 @@ def confirm_payment(
     
     db.commit()
     return {"status": "success"}
+
+from datetime import datetime
+
+@router.delete("/{appointment_id}", response_model=Any)
+def cancel_appointment(
+    appointment_id: int,
+    db: Session = Depends(deps.get_db),
+    # Permitimos que Admin cancele (token requerido) o Cliente (token requerido)
+    # Para MVP simplificado asumimos contexto Admin o Cliente logueado
+    current_user = Depends(deps.get_current_user) 
+):
+    appointment = db.query(AppointmentModel).filter(AppointmentModel.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    # Validar Permisos (Seguridad básica)
+    # Si es un usuario Staff/Admin, puede borrar cualquier cita de su tenant
+    is_admin = hasattr(current_user, 'tenant_id') and current_user.tenant_id == appointment.tenant_id
+    
+    # Si es cliente, solo sus propias citas
+    is_owner = hasattr(current_user, 'email') and appointment.customer.email == current_user.email
+    
+    if not (is_admin or is_owner):
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    # Regla de Cancelación (Solo aplica si NO es admin)
+    if not is_admin:
+        tenant = appointment.tenant
+        limit_hours = tenant.config_cancellation_hours
+        time_until_appt = appointment.start_time.replace(tzinfo=None) - datetime.utcnow()
+        
+        if time_until_appt < timedelta(hours=limit_hours):
+            raise HTTPException(
+                status_code=400, 
+                detail=f"La cancelación solo se permite hasta {limit_hours} horas antes."
+            )
+
+    appointment.status = AppointmentStatus.CANCELLED
+    db.commit()
+    return {"status": "success", "message": "Appointment cancelled"}
+
+from pydantic import BaseModel
+
+# Reagendar (Simplificado: Solo cambio de hora)
+class AppointmentUpdate(BaseModel):
+    new_start_time: datetime
+
+@router.put("/{appointment_id}/reschedule", response_model=Any)
+def reschedule_appointment(
+    appointment_id: int,
+    update_data: AppointmentUpdate,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+):
+    appointment = db.query(AppointmentModel).filter(AppointmentModel.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    # 1. Verificar Disponibilidad Nueva
+    # Nota: Usamos la lógica de availability existente
+    query_date = update_data.new_start_time.date()
+    query_time_str = update_data.new_start_time.strftime("%H:%M")
+    
+    available_slots = get_availability(db, appointment.tenant_id, appointment.service_id, query_date)
+    
+    if query_time_str not in available_slots:
+        raise HTTPException(status_code=409, detail="El nuevo horario no está disponible.")
+        
+    # 2. Actualizar
+    duration = appointment.end_time - appointment.start_time
+    appointment.start_time = update_data.new_start_time
+    appointment.end_time = update_data.new_start_time + duration
+    
+    db.commit()
+    db.refresh(appointment)
+    return {"status": "success", "new_time": appointment.start_time}
