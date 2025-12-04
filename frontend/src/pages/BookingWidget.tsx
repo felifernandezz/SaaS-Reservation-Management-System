@@ -142,8 +142,8 @@ const BookingWidget: React.FC = () => {
                             <Col md={5}>
                                 <Card className="h-100 shadow-sm hover-card" onClick={() => { setIsMember(true); navigate('/portal/login'); }} style={{ cursor: 'pointer' }}>
                                     <Card.Body className="d-flex flex-column justify-content-center align-items-center p-5">
-                                        <h4>Member Login</h4>
-                                        <p className="text-muted">Use your class credits</p>
+                                        <h4>Customer Login</h4>
+                                        <p className="text-muted">Log in to your account</p>
                                         <Button variant="outline-primary">Login</Button>
                                     </Card.Body>
                                 </Card>

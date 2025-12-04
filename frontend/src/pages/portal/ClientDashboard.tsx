@@ -58,7 +58,7 @@ const ClientDashboard = () => {
                 <Row>
                     <Col md={6}>
                         <Card className="mb-4 shadow-sm">
-                            <Card.Header className="bg-white fw-bold">Active Membership</Card.Header>
+                            <Card.Header className="bg-white fw-bold">My Credits</Card.Header>
                             <Card.Body>
                                 {profile?.active_subscription ? (
                                     <div>
@@ -68,8 +68,8 @@ const ClientDashboard = () => {
                                     </div>
                                 ) : (
                                     <div className="text-center py-4">
-                                        <p>No active membership found.</p>
-                                        <Button variant="success" onClick={() => navigate('/portal/buy-plan')}>Buy a Plan</Button>
+                                        <p>No active credits found.</p>
+                                        <Button variant="success" onClick={() => navigate('/portal/buy-plan')}>Buy Credits</Button>
                                     </div>
                                 )}
                             </Card.Body>

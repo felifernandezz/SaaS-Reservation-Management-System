@@ -65,7 +65,7 @@ def update_tenant_config(
     """
     Update tenant configuration.
     """
-    # For MVP, assume user belongs to Tenant 1 or use current_user.tenant_id
+    # Use current_user.tenant_id
     tenant_id = current_user.tenant_id
     tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
     
