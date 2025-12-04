@@ -17,3 +17,7 @@ class Tenant(Base):
     secondary_color = Column(String(7), default="#6c757d")
     logo_url = Column(String(500), nullable=True) # URL pública del logo
     website_title = Column(String(100), default="Sistema de Reservas") # Lo que sale en la pestaña del navegador
+    
+    # Working Hours (Global Default)
+    working_hours_start = Column(String(5), default="09:00")
+    working_hours_end = Column(String(5), default="18:00")

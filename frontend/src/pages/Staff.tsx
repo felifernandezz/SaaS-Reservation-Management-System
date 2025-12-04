@@ -28,7 +28,10 @@ const Staff: React.FC = () => {
 
     const fetchStaff = async () => {
         try {
-            const response = await axios.get('/api/v1/users/');
+            const token = localStorage.getItem('token');
+            const response = await axios.get('/api/v1/users/', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             setStaff(response.data);
         } catch (err) {
             console.error("Error fetching staff", err);
@@ -53,13 +56,16 @@ const Staff: React.FC = () => {
 
     const handleSave = async () => {
         try {
+            const token = localStorage.getItem('token');
             const payload: any = { ...formData, tenant_id: 1 }; // Hardcoded tenant_id
             if (!payload.password) delete payload.password; // Don't send empty password on edit
 
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+
             if (editingUser) {
-                await axios.put(`/api/v1/users/${editingUser.id}`, payload);
+                await axios.put(`/api/v1/users/${editingUser.id}`, payload, config);
             } else {
-                await axios.post('/api/v1/users/', payload);
+                await axios.post('/api/v1/users/', payload, config);
             }
             fetchStaff();
             handleClose();
@@ -72,7 +78,10 @@ const Staff: React.FC = () => {
     const handleDelete = async (id: number) => {
         if (window.confirm("Are you sure you want to delete this user?")) {
             try {
-                await axios.delete(`/api/v1/users/${id}`);
+                const token = localStorage.getItem('token');
+                await axios.delete(`/api/v1/users/${id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
                 fetchStaff();
             } catch (err) {
                 console.error("Error deleting staff", err);

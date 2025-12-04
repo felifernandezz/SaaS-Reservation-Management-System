@@ -45,6 +45,18 @@ def migrate_tenant():
                 print("✅ Added website_title column")
             except Exception as e:
                 print(f"⚠️ website_title column might already exist: {e}")
+
+            try:
+                connection.execute(text("ALTER TABLE tenant ADD COLUMN working_hours_start VARCHAR(5) DEFAULT '09:00'"))
+                print("✅ Added working_hours_start column")
+            except Exception as e:
+                print(f"⚠️ working_hours_start column might already exist: {e}")
+
+            try:
+                connection.execute(text("ALTER TABLE tenant ADD COLUMN working_hours_end VARCHAR(5) DEFAULT '18:00'"))
+                print("✅ Added working_hours_end column")
+            except Exception as e:
+                print(f"⚠️ working_hours_end column might already exist: {e}")
                 
             # Update existing tenant (ID 1) with default values
             connection.execute(text("UPDATE tenant SET slug='demo', domain='localhost', website_title='Demo Reservas' WHERE id=1"))

@@ -5,6 +5,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Container, Card, Spinner } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { getAppointments } from '../services/calendar';
+import axios from 'axios';
 
 import 'moment/locale/es'; // Import Spanish locale
 
@@ -16,19 +17,34 @@ const CalendarView: React.FC = () => {
     const { t } = useTranslation();
     const [events, setEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
+    const [workingHours, setWorkingHours] = useState({ start: new Date(0, 0, 0, 8, 0, 0), end: new Date(0, 0, 0, 20, 0, 0) });
 
     useEffect(() => {
-        const fetchEvents = async () => {
+        const fetchData = async () => {
             try {
-                const data = await getAppointments();
-                setEvents(data);
+                const [appointments, config] = await Promise.all([
+                    getAppointments(),
+                    axios.get('/api/v1/tenants/config') // Public endpoint, no auth needed for GET usually, but let's check
+                ]);
+
+                setEvents(appointments);
+
+                if (config.data.working_hours_start && config.data.working_hours_end) {
+                    const [startHour, startMinute] = config.data.working_hours_start.split(':').map(Number);
+                    const [endHour, endMinute] = config.data.working_hours_end.split(':').map(Number);
+
+                    setWorkingHours({
+                        start: new Date(0, 0, 0, startHour, startMinute, 0),
+                        end: new Date(0, 0, 0, endHour, endMinute, 0)
+                    });
+                }
             } catch (error) {
-                console.error("Failed to fetch appointments", error);
+                console.error("Failed to fetch data", error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchEvents();
+        fetchData();
     }, []);
 
     if (loading) {
@@ -52,9 +68,9 @@ const CalendarView: React.FC = () => {
                         style={{ height: '100%' }}
                         defaultView={Views.WEEK}
                         views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
-                        defaultDate={new Date(2025, 11, 3)} // Set to Dec 2025 for demo
-                        min={new Date(0, 0, 0, 8, 0, 0)} // 8 AM
-                        max={new Date(0, 0, 0, 20, 0, 0)} // 8 PM
+                        defaultDate={new Date()}
+                        min={workingHours.start}
+                        max={workingHours.end}
                     />
                 </Card.Body>
             </Card>

@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "supersecretkey" # Change in production
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
+    # CORS
+    BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    
     # Mercado Pago
     MERCADOPAGO_ACCESS_TOKEN: str = "TEST-7641976622791898-120315-f55963753381e1910543509315532577-186962423" # Placeholder Test Token
     

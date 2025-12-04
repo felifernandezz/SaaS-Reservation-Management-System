@@ -28,7 +28,10 @@ const Services: React.FC = () => {
 
     const fetchServices = async () => {
         try {
-            const response = await axios.get('/api/v1/services/');
+            const token = localStorage.getItem('token');
+            const response = await axios.get('/api/v1/services/', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             setServices(response.data);
         } catch (err) {
             console.error("Error fetching services", err);
@@ -53,11 +56,14 @@ const Services: React.FC = () => {
 
     const handleSave = async () => {
         try {
+            const token = localStorage.getItem('token');
             const payload = { ...formData, tenant_id: 1 }; // Hardcoded tenant_id for MVP
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+
             if (editingService) {
-                await axios.put(`/api/v1/services/${editingService.id}`, payload);
+                await axios.put(`/api/v1/services/${editingService.id}`, payload, config);
             } else {
-                await axios.post('/api/v1/services/', payload);
+                await axios.post('/api/v1/services/', payload, config);
             }
             fetchServices();
             handleClose();
@@ -70,7 +76,10 @@ const Services: React.FC = () => {
     const handleDelete = async (id: number) => {
         if (window.confirm("Are you sure you want to delete this service?")) {
             try {
-                await axios.delete(`/api/v1/services/${id}`);
+                const token = localStorage.getItem('token');
+                await axios.delete(`/api/v1/services/${id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
                 fetchServices();
             } catch (err) {
                 console.error("Error deleting service", err);

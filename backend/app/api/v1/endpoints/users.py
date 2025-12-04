@@ -34,24 +34,32 @@ def create_user(
     """
     Create new user.
     """
+    print(f"DEBUG: create_user called with {user_in}")
     user = db.query(UserModel).filter(UserModel.email == user_in.email).first()
     if user:
+        print("DEBUG: User already exists")
         raise HTTPException(
             status_code=400,
             detail="The user with this username already exists in the system.",
         )
     
-    db_user = UserModel(
-        email=user_in.email,
-        hashed_password=security.get_password_hash(user_in.password),
-        full_name=user_in.full_name,
-        tenant_id=user_in.tenant_id,
-        is_superuser=user_in.is_superuser,
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
+    try:
+        db_user = UserModel(
+            email=user_in.email,
+            hashed_password=security.get_password_hash(user_in.password),
+            full_name=user_in.full_name,
+            tenant_id=user_in.tenant_id,
+            is_superuser=user_in.is_superuser,
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        print(f"DEBUG: User created successfully: {db_user.id}")
+        return db_user
+    except Exception as e:
+        print(f"DEBUG: Error creating user: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 @router.get("/me", response_model=User)
 def read_user_me(

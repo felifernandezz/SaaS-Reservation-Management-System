@@ -3,13 +3,18 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.db.session import get_db
+from app.api import deps
 from app.models.service import Service as ServiceModel, ServiceStep as ServiceStepModel
 from app.schemas.service import ServiceCreate, Service, ServiceUpdate
 
 router = APIRouter()
 
 @router.post("/", response_model=Service)
-def create_service(service: ServiceCreate, db: Session = Depends(get_db)):
+def create_service(
+    service: ServiceCreate,
+    db: Session = Depends(get_db),
+    current_user = Depends(deps.get_current_active_user)
+):
     # Create Service
     db_service = ServiceModel(
         tenant_id=service.tenant_id,
@@ -56,7 +61,8 @@ def read_service(service_id: int, db: Session = Depends(get_db)):
 def update_service(
     service_id: int,
     service_in: ServiceUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(deps.get_current_active_user)
 ):
     service = db.query(ServiceModel).filter(ServiceModel.id == service_id).first()
     if not service:
@@ -72,7 +78,11 @@ def update_service(
     return service
 
 @router.delete("/{service_id}", response_model=Service)
-def delete_service(service_id: int, db: Session = Depends(get_db)):
+def delete_service(
+    service_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(deps.get_current_active_user)
+):
     service = db.query(ServiceModel).filter(ServiceModel.id == service_id).first()
     if not service:
         raise HTTPException(status_code=404, detail="Service not found")
