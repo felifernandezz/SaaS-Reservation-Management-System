@@ -25,6 +25,22 @@ def read_users(
     ).offset(skip).limit(limit).all()
     return users
 
+@router.get("/public", response_model=List[User])
+def read_users_public(
+    tenant_id: int,
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100
+) -> Any:
+    """
+    Public endpoint for booking widget to fetch staff.
+    """
+    users = db.query(UserModel).filter(
+        UserModel.tenant_id == tenant_id,
+        UserModel.is_active == True
+    ).offset(skip).limit(limit).all()
+    return users
+
 @router.post("/", response_model=User)
 def create_user(
     *,

@@ -20,7 +20,9 @@ const ServiceSelection: React.FC<Props> = ({ onSelect }) => {
     useEffect(() => {
         const fetchServices = async () => {
             try {
-                const response = await axios.get('/api/v1/services/');
+                // Use public endpoint with hardcoded tenant_id for MVP (or get from theme/context)
+                const tenantId = 1;
+                const response = await axios.get(`/api/v1/services/public?tenant_id=${tenantId}`);
                 setServices(response.data);
                 setLoading(false);
             } catch (error) {

@@ -36,6 +36,8 @@ const BookingWidget: React.FC = () => {
     const [success, setSuccess] = useState(false);
     const [isMember, setIsMember] = useState(false);
 
+    const [staffList, setStaffList] = useState<any[]>([]);
+
     useEffect(() => {
         // Check if already logged in
         const token = localStorage.getItem('customer_token');
@@ -43,6 +45,18 @@ const BookingWidget: React.FC = () => {
             setIsMember(true);
             setStep(BookingStep.SERVICE_SELECTION); // Skip user type selection
         }
+
+        // Fetch Staff
+        const fetchStaff = async () => {
+            try {
+                const tenantId = 1;
+                const response = await axios.get(`/api/v1/users/public?tenant_id=${tenantId}`);
+                setStaffList(response.data);
+            } catch (err) {
+                console.error("Error fetching staff", err);
+            }
+        };
+        fetchStaff();
     }, []);
 
     const handleServiceSelect = (service: any) => {
@@ -149,13 +163,26 @@ const BookingWidget: React.FC = () => {
             case BookingStep.SERVICE_SELECTION:
                 return <ServiceSelection onSelect={handleServiceSelect} />;
             case BookingStep.STAFF_SELECTION:
-                // Placeholder for Staff Selection Component
-                // For now, auto-skip or simple list
                 return (
                     <div className="text-center">
                         <h4>Select a Trainer (Optional)</h4>
-                        <Button variant="outline-secondary" className="m-2" onClick={() => handleStaffSelect(null)}>Any Trainer</Button>
-                        {/* TODO: Fetch staff list */}
+                        <div className="d-flex flex-wrap justify-content-center gap-3 mt-4">
+                            <Button
+                                variant={selectedStaffId === null ? "primary" : "outline-secondary"}
+                                onClick={() => handleStaffSelect(null)}
+                            >
+                                Any Trainer
+                            </Button>
+                            {staffList.map((staff: any) => (
+                                <Button
+                                    key={staff.id}
+                                    variant={selectedStaffId === staff.id ? "primary" : "outline-secondary"}
+                                    onClick={() => handleStaffSelect(staff.id)}
+                                >
+                                    {staff.full_name}
+                                </Button>
+                            ))}
+                        </div>
                     </div>
                 );
             case BookingStep.DATE_TIME_SELECTION:

@@ -21,6 +21,21 @@ def read_services(
     ).offset(skip).limit(limit).all()
     return services
 
+@router.get("/public", response_model=List[Service])
+def read_services_public(
+    tenant_id: int,
+    skip: int = 0, 
+    limit: int = 100, 
+    db: Session = Depends(get_db)
+):
+    """
+    Public endpoint for booking widget.
+    """
+    services = db.query(ServiceModel).filter(
+        ServiceModel.tenant_id == tenant_id
+    ).offset(skip).limit(limit).all()
+    return services
+
 @router.post("/", response_model=Service)
 def create_service(
     service: ServiceCreate,

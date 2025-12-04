@@ -56,21 +56,23 @@ const CalendarView: React.FC = () => {
     }
 
     return (
-        <Container fluid className="p-4" style={{ height: '90vh' }}>
+        <Container fluid className="p-4">
             <h2 className="mb-4 text-dark fw-bold">{t('nav.calendar')}</h2>
-            <Card className="shadow-sm border-0 h-100">
+            <Card className="shadow-sm border-0">
                 <Card.Body>
                     <Calendar
                         localizer={localizer}
                         events={events}
                         startAccessor="start"
                         endAccessor="end"
-                        style={{ height: '100%' }}
+                        style={{ height: '1200px' }} // Fixed height to ensure good visibility of slots
                         defaultView={Views.WEEK}
                         views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
                         defaultDate={new Date()}
                         min={workingHours.start}
                         max={workingHours.end}
+                        step={30}
+                        timeslots={2}
                     />
                 </Card.Body>
             </Card>
