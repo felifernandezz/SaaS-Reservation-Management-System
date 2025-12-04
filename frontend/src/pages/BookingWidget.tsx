@@ -45,19 +45,28 @@ const BookingWidget: React.FC = () => {
             setIsMember(true);
             setStep(BookingStep.SERVICE_SELECTION); // Skip user type selection
         }
-
-        // Fetch Staff
-        const fetchStaff = async () => {
-            try {
-                const tenantId = 1;
-                const response = await axios.get(`/api/v1/users/public?tenant_id=${tenantId}`);
-                setStaffList(response.data);
-            } catch (err) {
-                console.error("Error fetching staff", err);
-            }
-        };
-        fetchStaff();
     }, []);
+
+    useEffect(() => {
+        // Fetch Staff when step is STAFF_SELECTION and service is selected
+        if (step === BookingStep.STAFF_SELECTION && selectedServiceId) {
+            const fetchStaff = async () => {
+                try {
+                    const tenantId = 1;
+                    const response = await axios.get(`/api/v1/users/public`, {
+                        params: {
+                            tenant_id: tenantId,
+                            service_id: selectedServiceId
+                        }
+                    });
+                    setStaffList(response.data);
+                } catch (err) {
+                    console.error("Error fetching staff", err);
+                }
+            };
+            fetchStaff();
+        }
+    }, [step, selectedServiceId]);
 
     const handleServiceSelect = (service: any) => {
         setSelectedServiceId(service.id);
@@ -189,6 +198,7 @@ const BookingWidget: React.FC = () => {
                 return selectedServiceId ? (
                     <DateTimeSelection
                         serviceId={selectedServiceId}
+                        staffId={selectedStaffId}
                         onSelect={handleDateTimeSelect}
                     />
                 ) : null;

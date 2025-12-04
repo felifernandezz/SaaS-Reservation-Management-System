@@ -4,10 +4,11 @@ import axios from 'axios';
 
 interface Props {
     serviceId: number;
+    staffId?: number | null;
     onSelect: (date: string, time: string) => void;
 }
 
-const DateTimeSelection: React.FC<Props> = ({ serviceId, onSelect }) => {
+const DateTimeSelection: React.FC<Props> = ({ serviceId, staffId, onSelect }) => {
     const [selectedDate, setSelectedDate] = useState<string>('');
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
@@ -25,7 +26,7 @@ const DateTimeSelection: React.FC<Props> = ({ serviceId, onSelect }) => {
         if (selectedDate && serviceId) {
             fetchAvailability(selectedDate);
         }
-    }, [selectedDate, serviceId]);
+    }, [selectedDate, serviceId, staffId]);
 
     const fetchAvailability = async (date: string) => {
         setLoading(true);
@@ -34,13 +35,17 @@ const DateTimeSelection: React.FC<Props> = ({ serviceId, onSelect }) => {
 
         try {
             // NOTA: tenant_id=1 hardcodeado temporalmente, debe venir de props o contexto
-            const response = await axios.get(`/api/v1/availability/`, {
-                params: {
-                    service_id: serviceId,
-                    date: date,
-                    tenant_id: 1
-                }
-            });
+            const params: any = {
+                service_id: serviceId,
+                date: date,
+                tenant_id: 1
+            };
+            if (staffId) {
+                params.staff_id = staffId;
+            }
+
+            const response = await axios.get(`/api/v1/availability/`, { params });
+            setAvailableSlots(response.data);
             setAvailableSlots(response.data);
         } catch (err) {
             console.error("Error fetching availability", err);

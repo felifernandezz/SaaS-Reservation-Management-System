@@ -16,6 +16,7 @@ def check_availability(
     # CAMBIO: Eliminada dependencia de autenticación obligatoria.
     # Se agrega tenant_id como parámetro explícito para contexto público.
     tenant_id: int = Query(..., description="ID del negocio"), 
+    staff_id: int = Query(None, description="ID del profesional (opcional)"),
     db: Session = Depends(get_db)
 ):
     """
@@ -26,6 +27,7 @@ def check_availability(
         db=db,
         tenant_id=tenant_id,
         service_id=service_id,
-        query_date=date
+        query_date=date,
+        staff_id=staff_id
     )
     return slots

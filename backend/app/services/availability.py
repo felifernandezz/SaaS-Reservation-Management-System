@@ -13,7 +13,8 @@ def get_availability(
     db: Session,
     tenant_id: int,
     service_id: int,
-    query_date: date
+    query_date: date,
+    staff_id: Optional[int] = None
 ) -> List[str]:
     """
     Calculates available time slots for a specific service on a specific date.
@@ -34,12 +35,17 @@ def get_availability(
     
     # 3. Get Working Hours (Schedules)
     # Get all active staff schedules for this day
-    staff_schedules = db.query(Schedule).filter(
+    query = db.query(Schedule).filter(
         Schedule.tenant_id == tenant_id,
         Schedule.day_of_week == day_of_week,
         Schedule.staff_id.isnot(None),
         Schedule.is_active == True
-    ).all()
+    )
+    
+    if staff_id:
+        query = query.filter(Schedule.staff_id == staff_id)
+        
+    staff_schedules = query.all()
     
     if not staff_schedules:
         return [] # No staff working today

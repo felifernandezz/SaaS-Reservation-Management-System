@@ -1,10 +1,11 @@
 from typing import Any, List
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.api import deps
 from app.core import security
 from app.db.session import get_db
 from app.models.user import User as UserModel
+from app.models.service import Service
 from app.schemas.user import User, UserCreate, UserUpdate
 
 router = APIRouter()
@@ -25,18 +26,43 @@ def read_users(
 @router.get("/public", response_model=List[User])
 def read_users_public(
     tenant_id: int,
+    service_id: int = Query(None), # Nuevo filtro opcional
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100
-) -> Any:
+):
     """
     Public endpoint for booking widget to fetch staff.
     """
-    users = db.query(UserModel).filter(
+    query = db.query(UserModel).filter(
         UserModel.tenant_id == tenant_id,
         UserModel.is_active == True
-    ).offset(skip).limit(limit).all()
-    return users
+    )
+    
+    if service_id:
+        # Filtrar usuarios que tengan el servicio asignado
+        query = query.filter(UserModel.services.any(id=service_id))
+        
+    return query.offset(skip).limit(limit).all()
+
+@router.post("/{user_id}/services", response_model=Any)
+def update_user_services(
+    user_id: int,
+    service_ids: List[int] = Body(...),
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(deps.get_current_active_user),
+):
+    """Assign services to a staff member (Skills)"""
+    user = db.query(UserModel).filter(UserModel.id == user_id, UserModel.tenant_id == current_user.tenant_id).first()
+    if not user:
+        raise HTTPException(404, "User not found")
+        
+    # Buscar los servicios
+    services = db.query(Service).filter(Service.id.in_(service_ids), Service.tenant_id == current_user.tenant_id).all()
+    
+    user.services = services
+    db.commit()
+    return {"status": "success", "assigned_count": len(services)}
 
 @router.post("/", response_model=User)
 def create_user(

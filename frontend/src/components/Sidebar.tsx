@@ -1,12 +1,18 @@
 import { Nav, Image } from 'react-bootstrap';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FaHome, FaCalendarAlt, FaCog, FaUsers, FaCut } from 'react-icons/fa';
+import { FaHome, FaCalendarAlt, FaCog, FaUsers, FaCut, FaClock, FaSignOutAlt } from 'react-icons/fa';
 import { useTheme } from '../context/ThemeContext';
 
 const Sidebar = () => {
     const { t } = useTranslation();
     const theme = useTheme();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        navigate('/login');
+    };
 
     return (
         <div className="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" style={{ width: '280px', minHeight: '100vh' }}>
@@ -39,12 +45,22 @@ const Sidebar = () => {
                     </Nav.Link>
                 </Nav.Item>
                 <Nav.Item>
+                    <Nav.Link as={NavLink} to="/schedules" className="text-white">
+                        <FaClock className="me-2" /> {t('nav.schedules') || 'Horarios'}
+                    </Nav.Link>
+                </Nav.Item>
+                <Nav.Item>
                     <Nav.Link as={NavLink} to="/settings" className="text-white">
                         <FaCog className="me-2" /> {t('nav.settings')}
                     </Nav.Link>
                 </Nav.Item>
             </Nav>
             <hr />
+            <div className="mt-auto">
+                <Nav.Link className="text-white" onClick={handleLogout} style={{ cursor: 'pointer' }}>
+                    <FaSignOutAlt className="me-2" /> {t('nav.logout') || 'Cerrar Sesión'}
+                </Nav.Link>
+            </div>
         </div>
     );
 };

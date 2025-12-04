@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Calendar from './pages/Calendar';
 import Services from './pages/Services';
 import Staff from './pages/Staff';
+import Schedules from './pages/Schedules';
 import Settings from './pages/Settings';
 import GuestLayout from './layouts/GuestLayout';
 import BookingWidget from './pages/BookingWidget';
@@ -28,6 +29,7 @@ function App() {
                         <Route path="calendar" element={<Calendar />} />
                         <Route path="services" element={<Services />} />
                         <Route path="staff" element={<Staff />} />
+                        <Route path="schedules" element={<Schedules />} />
                         <Route path="settings" element={<Settings />} />
                     </Route>
                 </Route>
