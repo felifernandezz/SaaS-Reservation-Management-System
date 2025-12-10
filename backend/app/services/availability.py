@@ -224,6 +224,10 @@ def get_availability(
         if slot_valid:
             available_slots.append(current_time.strftime("%H:%M"))
             
-        current_time += timedelta(minutes=30)
+        # Optimization: Step by service duration to avoid gaps (Grid Scheduling)
+        # Or defaults to 30 mins if duration is very small?
+        # User requested 60m service -> 60m slots.
+        step_minutes = service.duration_minutes if service.duration_minutes > 0 else 30
+        current_time += timedelta(minutes=step_minutes)
 
     return available_slots

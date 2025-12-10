@@ -1,21 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Table, Spinner, Alert, Card, Button, Modal, Form } from 'react-bootstrap';
+import { Container, Table, Spinner, Alert, Card, Button, Modal, Form, Badge } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
-import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus, FaCheck } from 'react-icons/fa';
 
 interface User {
     id: number;
     email: string;
     full_name: string;
     is_active: boolean;
-    services?: any[]; // Para mostrar qué hace
+    services?: any[];
 }
 
 const Staff: React.FC = () => {
     const { t } = useTranslation();
     const [staff, setStaff] = useState<User[]>([]);
-    const [allServices, setAllServices] = useState<any[]>([]); // Lista de servicios disponibles
+    const [allServices, setAllServices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +23,7 @@ const Staff: React.FC = () => {
     const [showModal, setShowModal] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [formData, setFormData] = useState({ email: '', full_name: '', password: '' });
-    const [selectedServiceIds, setSelectedServiceIds] = useState<number[]>([]); // Selección múltiple
+    const [selectedServiceIds, setSelectedServiceIds] = useState<number[]>([]);
 
     useEffect(() => {
         fetchData();
@@ -33,13 +33,12 @@ const Staff: React.FC = () => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-
-            // Cargar Staff y Servicios en paralelo
+            
             const [staffRes, servicesRes] = await Promise.all([
                 axios.get('/api/v1/users/', config),
                 axios.get('/api/v1/services/', config)
             ]);
-
+            
             setStaff(staffRes.data);
             setAllServices(servicesRes.data);
         } catch (err) {
@@ -54,8 +53,6 @@ const Staff: React.FC = () => {
         if (user) {
             setEditingUser(user);
             setFormData({ email: user.email, full_name: user.full_name, password: '' });
-            // Pre-seleccionar servicios si el backend los devuelve (requiere que el endpoint GET users los incluya)
-            // Por simplicidad en MVP, asumimos que están en user.services o vacíos
             setSelectedServiceIds(user.services?.map(s => s.id) || []);
         } else {
             setEditingUser(null);
@@ -68,9 +65,9 @@ const Staff: React.FC = () => {
     const handleClose = () => setShowModal(false);
 
     const handleServiceToggle = (serviceId: number) => {
-        setSelectedServiceIds(prev =>
-            prev.includes(serviceId)
-                ? prev.filter(id => id !== serviceId)
+        setSelectedServiceIds(prev => 
+            prev.includes(serviceId) 
+                ? prev.filter(id => id !== serviceId) 
                 : [...prev, serviceId]
         );
     };
@@ -79,10 +76,10 @@ const Staff: React.FC = () => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-
+            
             let userId;
 
-            // 1. Guardar Datos Básicos
+            // 1. Guardar Usuario
             if (editingUser) {
                 await axios.put(`/api/v1/users/${editingUser.id}`, { ...formData, tenant_id: 1 }, config);
                 userId = editingUser.id;
@@ -91,8 +88,7 @@ const Staff: React.FC = () => {
                 userId = res.data.id;
             }
 
-            // 2. Guardar Asignación de Servicios (Skills)
-            // Llamamos al endpoint especial que creamos
+            // 2. Asignar Servicios
             await axios.post(`/api/v1/users/${userId}/services`, selectedServiceIds, config);
 
             fetchData();
@@ -119,33 +115,31 @@ const Staff: React.FC = () => {
         <Container fluid className="p-4">
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <h2>{t('nav.staff')}</h2>
-                <Button variant="primary" onClick={() => handleShow()}>
-                    <FaPlus className="me-2" /> New Staff
-                </Button>
+                <Button variant="primary" onClick={() => handleShow()}><FaPlus /> New Staff</Button>
             </div>
 
             {error && <Alert variant="danger">{error}</Alert>}
 
             <Card className="shadow-sm border-0">
                 <Card.Body className="p-0">
-                    <Table hover responsive className="mb-0">
+                    <Table hover responsive className="mb-0 align-middle">
                         <thead className="bg-light">
                             <tr>
-                                <th className="border-0">Name</th>
-                                <th className="border-0">Email</th>
-                                <th className="border-0">Assigned Services</th> {/* Nueva Columna */}
-                                <th className="border-0 text-end">Actions</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Skills (Services)</th>
+                                <th className="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {staff.map(user => (
                                 <tr key={user.id}>
-                                    <td>{user.full_name}</td>
+                                    <td className="fw-bold">{user.full_name}</td>
                                     <td>{user.email}</td>
                                     <td>
-                                        {user.services && user.services.length > 0
-                                            ? <small className="text-primary">{user.services.length} services</small>
-                                            : <small className="text-muted fst-italic">All Services (Generalist)</small>
+                                        {user.services && user.services.length > 0 
+                                            ? user.services.map(s => <Badge key={s.id} bg="info" className="me-1">{s.name}</Badge>)
+                                            : <Badge bg="secondary">Generalist (All)</Badge>
                                         }
                                     </td>
                                     <td className="text-end">
@@ -159,50 +153,31 @@ const Staff: React.FC = () => {
                 </Card.Body>
             </Card>
 
-            {/* Modal */}
             <Modal show={showModal} onHide={handleClose}>
-                <Modal.Header closeButton>
-                    <Modal.Title>{editingUser ? 'Edit Staff' : 'New Staff'}</Modal.Title>
-                </Modal.Header>
+                <Modal.Header closeButton><Modal.Title>{editingUser ? 'Edit Staff' : 'New Staff'}</Modal.Title></Modal.Header>
                 <Modal.Body>
                     <Form>
-                        {/* Campos Básicos */}
-                        <Form.Group className="mb-3">
-                            <Form.Label>Full Name</Form.Label>
-                            <Form.Control type="text" value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} />
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Email</Form.Label>
-                            <Form.Control type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Password {editingUser && '(Optional)'}</Form.Label>
-                            <Form.Control type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
-                        </Form.Group>
-
+                        <Form.Group className="mb-3"><Form.Label>Full Name</Form.Label><Form.Control type="text" value={formData.full_name} onChange={(e) => setFormData({...formData, full_name: e.target.value})} /></Form.Group>
+                        <Form.Group className="mb-3"><Form.Label>Email</Form.Label><Form.Control type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} /></Form.Group>
+                        <Form.Group className="mb-3"><Form.Label>Password</Form.Label><Form.Control type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} /></Form.Group>
+                        
                         <hr />
-
-                        {/* Selector de Servicios (Checkboxes) */}
-                        <Form.Group className="mb-3">
-                            <Form.Label className="fw-bold">Assigned Services</Form.Label>
-                            <div className="mb-2 text-muted small">
-                                {selectedServiceIds.length === 0
-                                    ? "No services selected. This person can perform ALL services."
-                                    : "This person can ONLY perform selected services."}
-                            </div>
-                            <div className="border rounded p-2" style={{ maxHeight: '150px', overflowY: 'auto' }}>
-                                {allServices.map(service => (
-                                    <Form.Check
-                                        key={service.id}
-                                        type="checkbox"
-                                        id={`service-${service.id}`}
-                                        label={service.name}
-                                        checked={selectedServiceIds.includes(service.id)}
-                                        onChange={() => handleServiceToggle(service.id)}
-                                    />
-                                ))}
-                            </div>
-                        </Form.Group>
+                        <h6 className="mb-3">Authorized Services</h6>
+                        <div className="border rounded p-3 bg-light" style={{maxHeight: '200px', overflowY: 'auto'}}>
+                            {allServices.length === 0 && <p className="text-muted small">No services created yet.</p>}
+                            {allServices.map(service => (
+                                <Form.Check 
+                                    key={service.id}
+                                    type="switch"
+                                    id={`srv-${service.id}`}
+                                    label={service.name}
+                                    checked={selectedServiceIds.includes(service.id)}
+                                    onChange={() => handleServiceToggle(service.id)}
+                                    className="mb-2"
+                                />
+                            ))}
+                        </div>
+                        <Form.Text className="text-muted">If none selected, staff can perform ALL services.</Form.Text>
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>

@@ -92,7 +92,7 @@ const ClientDashboard = () => {
                                                     <td>{moment(appt.start_time).format('DD/MM/YYYY')}</td>
                                                     <td className="fw-bold">{moment(appt.start_time).format('HH:mm')}</td>
                                                     <td>{appt.service?.name}</td>
-                                                    <td>{appt.staff?.full_name || '-'}</td>
+                                                    <td>{appt.staff?.full_name || ''}</td>
                                                     <td>
                                                         <Badge bg={appt.status === 'CONFIRMED' ? 'success' : 'warning'}>
                                                             {appt.status}
