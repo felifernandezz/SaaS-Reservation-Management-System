@@ -240,3 +240,24 @@ def reschedule_appointment(
     db.commit()
     db.refresh(appointment)
     return {"status": "success", "new_time": appointment.start_time}
+
+@router.get("/me", response_model=List[appointment_schemas.Appointment])
+def read_my_appointments(
+    db: Session = Depends(deps.get_db),
+    current_user: Customer = Depends(deps.get_current_customer),
+    skip: int = 0,
+    limit: int = 100
+):
+    """
+    Get appointments for the currently logged-in customer.
+    """
+    appointments = db.query(AppointmentModel).options(
+        joinedload(AppointmentModel.service),
+        joinedload(AppointmentModel.staff),
+        joinedload(AppointmentModel.resource)
+    ).filter(
+        AppointmentModel.customer_id == current_user.id,
+        AppointmentModel.status != AppointmentStatus.CANCELLED
+    ).order_by(AppointmentModel.start_time.asc()).offset(skip).limit(limit).all()
+    
+    return appointments

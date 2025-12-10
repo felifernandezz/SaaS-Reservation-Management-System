@@ -1,28 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Card, Row, Col, Button, Spinner } from 'react-bootstrap';
+import { Container, Card, Row, Col, Button, Spinner, Badge, Table } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import moment from 'moment';
 import { useTheme } from '../../context/ThemeContext';
 import PortalNavbar from '../../components/PortalNavbar';
 
-interface CustomerProfile {
-    full_name: string;
-    email: string;
-    active_subscription?: {
-        plan_name: string;
-        remaining_credits: number;
-        expires_at: string;
-    };
-}
-
 const ClientDashboard = () => {
-    const [profile, setProfile] = useState<CustomerProfile | null>(null);
+    const [appointments, setAppointments] = useState<any[]>([]);
+    const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const theme = useTheme();
 
     useEffect(() => {
-        const fetchProfile = async () => {
+        const fetchData = async () => {
             const token = localStorage.getItem('customer_token');
             if (!token) {
                 navigate('/portal/login');
@@ -30,11 +22,18 @@ const ClientDashboard = () => {
             }
 
             try {
-                const response = await axios.get('/api/v1/auth/customer/me', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setProfile(response.data);
+                const config = { headers: { Authorization: `Bearer ${token}` } };
+
+                // Cargar perfil y turnos en paralelo
+                const [profileRes, apptRes] = await Promise.all([
+                    axios.get('/api/v1/auth/customer/me', config),
+                    axios.get('/api/v1/appointments/me', config)
+                ]);
+
+                setProfile(profileRes.data);
+                setAppointments(apptRes.data);
             } catch (error) {
+                console.error("Auth Error", error);
                 localStorage.removeItem('customer_token');
                 navigate('/portal/login');
             } finally {
@@ -42,53 +41,101 @@ const ClientDashboard = () => {
             }
         };
 
-        fetchProfile();
+        fetchData();
     }, [navigate]);
 
     if (loading) return <div className="text-center mt-5"><Spinner animation="border" /></div>;
 
+    // Separar turnos pasados y futuros
+    const now = moment();
+    const upcoming = appointments.filter(a => moment(a.start_time).isAfter(now));
+    const history = appointments.filter(a => moment(a.start_time).isBefore(now));
+
     return (
         <>
             <PortalNavbar />
-            <Container className="mt-5">
+            <Container className="mt-4">
                 <div className="d-flex justify-content-between align-items-center mb-4">
-                    <h2 style={{ color: theme?.primaryColor }}>Welcome, {profile?.full_name}</h2>
+                    <h2 style={{ color: theme?.primaryColor }}>Hola, {profile?.full_name}</h2>
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        style={{ backgroundColor: theme?.primaryColor, borderColor: theme?.primaryColor }}
+                        onClick={() => navigate('/book')}
+                    >
+                        + Nuevo Turno
+                    </Button>
                 </div>
 
                 <Row>
-                    <Col md={6}>
-                        <Card className="mb-4 shadow-sm">
-                            <Card.Header className="bg-white fw-bold">My Credits</Card.Header>
-                            <Card.Body>
-                                {profile?.active_subscription ? (
-                                    <div>
-                                        <h3 className="text-primary">{profile.active_subscription.plan_name}</h3>
-                                        <p className="display-4 fw-bold">{profile.active_subscription.remaining_credits} <span className="fs-5 text-muted">credits left</span></p>
-                                        <small className="text-muted">Expires: {new Date(profile.active_subscription.expires_at).toLocaleDateString()}</small>
-                                    </div>
+                    {/* PRÓXIMOS TURNOS */}
+                    <Col md={8}>
+                        <Card className="shadow-sm mb-4 border-0">
+                            <Card.Header className="bg-white py-3">
+                                <h5 className="mb-0 fw-bold">Próximos Turnos</h5>
+                            </Card.Header>
+                            <Card.Body className="p-0">
+                                {upcoming.length > 0 ? (
+                                    <Table hover responsive className="mb-0">
+                                        <thead className="bg-light">
+                                            <tr>
+                                                <th>Fecha</th>
+                                                <th>Hora</th>
+                                                <th>Servicio</th>
+                                                <th>Profesional</th>
+                                                <th>Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {upcoming.map(appt => (
+                                                <tr key={appt.id}>
+                                                    <td>{moment(appt.start_time).format('DD/MM/YYYY')}</td>
+                                                    <td className="fw-bold">{moment(appt.start_time).format('HH:mm')}</td>
+                                                    <td>{appt.service?.name}</td>
+                                                    <td>{appt.staff?.full_name || '-'}</td>
+                                                    <td>
+                                                        <Badge bg={appt.status === 'CONFIRMED' ? 'success' : 'warning'}>
+                                                            {appt.status}
+                                                        </Badge>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </Table>
                                 ) : (
-                                    <div className="text-center py-4">
-                                        <p>No active credits found.</p>
-                                        <Button variant="success" onClick={() => navigate('/portal/buy-plan')}>Buy Credits</Button>
+                                    <div className="text-center py-5 text-muted">
+                                        <p>No tienes turnos próximos.</p>
+                                        <Button variant="link" onClick={() => navigate('/book')}>Reservar ahora</Button>
                                     </div>
                                 )}
                             </Card.Body>
                         </Card>
+
+                        {/* HISTORIAL (Opcional, colapsado o simple) */}
+                        {history.length > 0 && (
+                            <div className="mt-5">
+                                <h6 className="text-muted mb-3">Historial Reciente</h6>
+                                <div className="list-group">
+                                    {history.slice(0, 3).map(appt => (
+                                        <div key={appt.id} className="list-group-item list-group-item-action d-flex justify-content-between align-items-center opacity-75">
+                                            <div>
+                                                <small className="fw-bold">{moment(appt.start_time).format('DD/MM/YYYY')}</small> - {appt.service?.name}
+                                            </div>
+                                            <small className="text-muted">Completado</small>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </Col>
-                    <Col md={6}>
-                        <Card className="mb-4 shadow-sm">
-                            <Card.Header className="bg-white fw-bold">Quick Actions</Card.Header>
+
+                    {/* SIDEBAR INFORMATIVO */}
+                    <Col md={4}>
+                        <Card className="shadow-sm border-0 mb-3" style={{ background: `linear-gradient(135deg, ${theme?.primaryColor || '#0d6efd'} 0%, #333 100%)`, color: 'white' }}>
                             <Card.Body>
-                                <Button
-                                    variant="primary"
-                                    className="w-100 mb-3"
-                                    size="lg"
-                                    style={{ backgroundColor: theme?.primaryColor, borderColor: theme?.primaryColor }}
-                                    onClick={() => navigate('/book')}
-                                >
-                                    Book a Class
-                                </Button>
-                                <Button variant="outline-secondary" className="w-100">View History</Button>
+                                <h5>Mi Cuenta</h5>
+                                <p className="mb-1 opacity-75">Email: {profile?.email}</p>
+                                <p className="mb-0 opacity-75">Teléfono: {profile?.phone || 'No registrado'}</p>
                             </Card.Body>
                         </Card>
                     </Col>

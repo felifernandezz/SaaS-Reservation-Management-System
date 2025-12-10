@@ -19,17 +19,17 @@ const PortalNavbar = () => {
         <Navbar bg="white" expand="lg" className="shadow-sm mb-4">
             <Container>
                 <Navbar.Brand as={Link} to="/portal/dashboard" style={{ color: theme?.primaryColor, fontWeight: 'bold' }}>
-                    {theme?.name || 'Client Portal'}
+                    {theme?.name || 'Mi Portal'}
                 </Navbar.Brand>
                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
                 <Navbar.Collapse id="basic-navbar-nav">
                     <Nav className="me-auto">
-                        <Nav.Link as={Link} to="/portal/dashboard">Dashboard</Nav.Link>
-                        <Nav.Link as={Link} to="/book">Book a Class</Nav.Link>
-                        <Nav.Link as={Link} to="/portal/buy-plan">Buy Plan</Nav.Link>
+                        <Nav.Link as={Link} to="/portal/dashboard">Mis Turnos</Nav.Link>
+                        <Nav.Link as={Link} to="/book">Reservar Nuevo</Nav.Link>
+                        {/* ELIMINADO: Buy Plan */}
                     </Nav>
                     <Nav>
-                        <Button variant="outline-danger" size="sm" onClick={handleLogout}>Logout</Button>
+                        <Button variant="outline-danger" size="sm" onClick={handleLogout}>Salir</Button>
                     </Nav>
                 </Navbar.Collapse>
             </Container>

@@ -1,6 +1,7 @@
 from typing import Any, List
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import or_
 from app.api import deps
 from app.core import security
 from app.db.session import get_db
@@ -18,7 +19,7 @@ def read_users(
     current_user: UserModel = Depends(deps.get_current_active_user),
 ):
     # Solo mostrar usuarios de MI tenant
-    users = db.query(UserModel).filter(
+    users = db.query(UserModel).options(joinedload(UserModel.services)).filter(
         UserModel.tenant_id == current_user.tenant_id
     ).offset(skip).limit(limit).all()
     return users
@@ -34,14 +35,19 @@ def read_users_public(
     """
     Public endpoint for booking widget to fetch staff.
     """
-    query = db.query(UserModel).filter(
+    query = db.query(UserModel).options(joinedload(UserModel.services)).filter(
         UserModel.tenant_id == tenant_id,
         UserModel.is_active == True
     )
     
     if service_id:
-        # Filtrar usuarios que tengan el servicio asignado
-        query = query.filter(UserModel.services.any(id=service_id))
+        # La Magia: (Tiene el servicio) O (No tiene ninguno)
+        query = query.filter(
+            or_(
+                UserModel.services.any(id=service_id), # Especialista
+                ~UserModel.services.any()              # Generalista (Lista vacía)
+            )
+        )
         
     return query.offset(skip).limit(limit).all()
 
