@@ -19,6 +19,8 @@ class Customer(CustomerBase):
     class Config:
         from_attributes = True
 
+from app.schemas.user import UserBase
+
 # Appointment Schemas
 class AppointmentBase(BaseModel):
     service_id: int
@@ -29,6 +31,7 @@ class AppointmentCreate(AppointmentBase):
     guest_data: Optional[CustomerCreate] = None
     customer_id: Optional[int] = None
     staff_id: Optional[int] = None
+    resource_id: Optional[int] = None
 
 class Appointment(AppointmentBase):
     id: int
@@ -36,10 +39,14 @@ class Appointment(AppointmentBase):
     customer_id: int
     end_time: datetime
     status: str
+    staff_id: Optional[int] = None
+    resource_id: Optional[int] = None
     
     # Relationships
     service: Optional[Service] = None
     customer: Optional[Customer] = None
+    staff: Optional[UserBase] = None
+    # resource: Optional[Resource] = None
 
     class Config:
         from_attributes = True

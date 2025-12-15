@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Container, Card, Spinner, Modal, Button, Alert } from 'react-bootstrap';
+import { Container, Card, Spinner, Modal, Button } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { getAppointments } from '../services/calendar';
 import axios from 'axios';
@@ -83,7 +83,7 @@ const CalendarView: React.FC = () => {
         }
     };
 
-    const eventStyleGetter = (event: any, start: any, end: any, isSelected: boolean) => {
+    const eventStyleGetter = (_event: any, _start: any, _end: any, isSelected: boolean) => {
         const style = {
             backgroundColor: isSelected ? '#0a58ca' : '#3788d8',
             borderRadius: '4px',
@@ -99,6 +99,7 @@ const CalendarView: React.FC = () => {
     const CustomEvent = ({ event }: any) => (
         <div title={event.title}>
             <strong>{event.title}</strong>
+            {event.staff && <div style={{ fontSize: '0.85em', fontStyle: 'italic' }}>{event.staff.full_name}</div>}
             {/* Hide details if too small, or just show minimal info */}
         </div>
     );
@@ -159,7 +160,8 @@ const CalendarView: React.FC = () => {
                             <h5>{selectedEvent.title}</h5>
                             <p>
                                 <strong>Inicio:</strong> {moment(selectedEvent.start).format('LT')} <br />
-                                <strong>Fin:</strong> {moment(selectedEvent.end).format('LT')}
+                                <strong>Fin:</strong> {moment(selectedEvent.end).format('LT')} <br />
+                                <strong>Staff:</strong> {selectedEvent.staff?.full_name || 'Sin Asignar'}
                             </p>
                             <p><strong>Estado:</strong> {selectedEvent.status}</p>
                         </div>

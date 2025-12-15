@@ -16,7 +16,8 @@ export const getAppointments = async (): Promise<any[]> => {
             start: new Date(appt.start_time), // ISO a Date Obj
             end: new Date(appt.end_time),
             resourceId: appt.staff_id,
-            status: appt.status
+            status: appt.status,
+            staff: appt.staff // Pass the full staff object
         }));
     } catch (error) {
         console.error("Error loading appointments from API", error);

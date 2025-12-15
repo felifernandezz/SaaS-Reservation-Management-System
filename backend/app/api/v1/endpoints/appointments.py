@@ -23,7 +23,8 @@ def read_appointments(
 ):
     query = db.query(AppointmentModel).options(
         joinedload(AppointmentModel.customer),
-        joinedload(AppointmentModel.service)
+        joinedload(AppointmentModel.service),
+        joinedload(AppointmentModel.staff)
     ).filter(
         AppointmentModel.tenant_id == tenant_id,
         AppointmentModel.status != AppointmentStatus.CANCELLED # Hide cancelled
@@ -86,27 +87,55 @@ def create_appointment(
     if not service:
         raise HTTPException(status_code=404, detail="Service not found")
 
-    # 4. Safety Check (Disponibilidad)
+    # 4. LÓGICA DE ASIGNACIÓN AUTOMÁTICA (AUTO-ASSIGN)
+    final_staff_id = appointment_in.staff_id
+    final_resource_id = appointment_in.resource_id # Future use for courts
+
     query_date = appointment_in.start_time.date()
     query_time_str = appointment_in.start_time.strftime("%H:%M")
-    
-    available_slots = get_availability(db, tenant_id, service.id, query_date)
+
+    # Si NO se eligió staff y el servicio NO requiere un recurso físico específico (es decir, requiere humano)
+    if not final_staff_id and not service.requires_resource_type:
+        from app.models import User
+        from sqlalchemy import or_
+        
+        # Buscar candidatos: Usuarios que tengan el servicio asignado (Skills) o sean generalistas
+        candidates = db.query(User).filter(
+            User.tenant_id == tenant_id,
+            User.is_active == True,
+            or_(
+                User.services.any(id=service.id),
+                ~User.services.any()
+            )
+        ).all()
+        
+        staff_assigned = False
+        for staff in candidates:
+            # Chequear disponibilidad específica para este staff
+            slots = get_availability(db, tenant_id, service.id, query_date, staff_id=staff.id)
+            if query_time_str in slots:
+                final_staff_id = staff.id
+                staff_assigned = True
+                break # Encontramos uno! Asignar y salir.
+        
+        if not staff_assigned:
+            raise HTTPException(status_code=409, detail="Lo sentimos, no hay profesionales disponibles para ese horario.")
+
+    # 5. Validación Final de Disponibilidad (Con el Staff ya asignado)
+    # Si el usuario eligió a mano, validamos su elección. Si fue automático, re-validamos por seguridad.
+    available_slots = get_availability(db, tenant_id, service.id, query_date, staff_id=final_staff_id)
     
     if query_time_str not in available_slots:
-        raise HTTPException(
-            status_code=409, 
-            detail="Lo sentimos, este turno acaba de ser ocupado."
-        )
+         raise HTTPException(status_code=409, detail="El horario seleccionado ya no está disponible.")
 
-    # 5. Calcular Fin
+    # 6. Calcular Fin
     end_time = appointment_in.start_time + timedelta(minutes=service.duration_minutes)
 
-    # 6. Lógica de Créditos (Solo para Miembros)
+    # 7. Lógica de Créditos/Pagos
     initial_status = AppointmentStatus.PENDING_PAYMENT
-    payment_url = f"/pay-mock/TEMP_ID" # Will update after commit
+    payment_url = f"/pay-mock/TEMP"
     
     if is_member:
-        # Buscar suscripción activa con créditos
         subscription = db.query(Subscription).filter(
             Subscription.customer_id == customer.id,
             Subscription.is_active == True,
@@ -115,17 +144,11 @@ def create_appointment(
         ).first()
         
         if subscription:
-            # Descontar crédito
             subscription.remaining_credits -= 1
             initial_status = AppointmentStatus.CONFIRMED
-            payment_url = None # No payment needed
-            # db.add(subscription) # Implicit in commit
-        else:
-            # Miembro sin créditos -> Paga como guest o error?
-            # Por ahora, dejamos que pague como guest
-            pass
+            payment_url = None
 
-    # 7. Crear Reserva
+    # 8. Guardar Reserva (CON EL STAFF ID ASIGNADO)
     appointment = AppointmentModel(
         tenant_id=tenant_id,
         service_id=service.id,
@@ -133,7 +156,8 @@ def create_appointment(
         start_time=appointment_in.start_time,
         end_time=end_time,
         status=initial_status,
-        staff_id=appointment_in.staff_id 
+        staff_id=final_staff_id, # Aquí va el ID real, nunca NULL para servicios humanos
+        resource_id=final_resource_id
     )
     
     db.add(appointment)
@@ -146,7 +170,8 @@ def create_appointment(
     return {
         "id": appointment.id,
         "status": appointment.status,
-        "payment_url": payment_url
+        "payment_url": payment_url,
+        "assigned_staff_id": final_staff_id # Devolvemos a quién se asignó
     }
 
 @router.post("/{appointment_id}/confirm-payment", response_model=Any)
