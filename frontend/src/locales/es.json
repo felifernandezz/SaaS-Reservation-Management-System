@@ -1,5 +1,5 @@
 {
-    "welcome": "Bienvenido al Sistema de Gestión de Reservas SaaS",
+    "welcome": "Bienvenido al Sistema de Reservas",
     "backend_says": "El Backend dice",
     "loading": "Cargando...",
     "get_started": "Comenzar",
@@ -10,10 +10,27 @@
     "common": {
         "back": "Atrás",
         "next": "Siguiente",
-        "confirm": "Confirmar"
+        "confirm": "Confirmar",
+        "cancel": "Cancelar",
+        "save": "Guardar",
+        "delete": "Eliminar",
+        "edit": "Editar",
+        "create": "Crear",
+        "actions": "Acciones"
     },
     "booking": {
+        "welcome_title": "¡Bienvenido! ¿Cómo te gustaría reservar?",
+        "login_customer": "Soy Cliente / Socio",
+        "login_desc": "Inicia sesión para ver tus turnos",
+        "guest_customer": "Soy Nuevo / Invitado",
+        "guest_desc": "Reserva un turno puntual",
+        "register_desc": "Crea una cuenta para reservar",
+        "register_btn": "Registrarse",
+        "login_btn": "Ingresar",
+        "continue_guest": "Continuar como Invitado",
         "select_service": "Selecciona un Servicio",
+        "select_staff": "Selecciona un Profesional",
+        "any_staff": "Cualquier Profesional",
         "select_time": "Elige Fecha y Hora",
         "your_details": "Tus Datos",
         "confirmation": "Confirmación",
@@ -24,14 +41,23 @@
         "booking_confirmed": "¡Reserva Confirmada!",
         "thank_you": "Gracias, {{name}}. Tu turno ha sido agendado.",
         "book_another": "Reservar Otro",
-        "error_booking": "Error al reservar. Por favor intenta de nuevo."
+        "error_booking": "Error al reservar. Por favor intenta de nuevo.",
+        "almost_there": "¡Casi listo!",
+        "review_details": "Por favor revisa los detalles antes de confirmar.",
+        "service": "Servicio",
+        "date": "Fecha",
+        "time": "Hora",
+        "guest": "Cliente",
+        "email": "Email"
     },
     "nav": {
         "dashboard": "Panel de Control",
         "calendar": "Calendario",
         "services": "Servicios",
         "staff": "Personal",
-        "settings": "Configuración"
+        "schedules": "Horarios",
+        "settings": "Configuración",
+        "logout": "Cerrar Sesión"
     },
     "dashboard_stats": {
         "appointments_today": "Turnos de Hoy",
@@ -42,6 +68,19 @@
         "no_activity": "No hay actividad reciente para mostrar.",
         "quick_actions": "Acciones Rápidas",
         "new_appointment": "Nuevo Turno",
-        "add_client": "Agregar Cliente"
+        "add_client": "Gestionar Personal"
+    },
+    "client_portal": {
+        "my_appointments": "Mis Turnos",
+        "new_booking": "Nuevo Turno",
+        "history": "Historial",
+        "cancel_appt": "Cancelar Turno",
+        "confirm_cancel": "¿Estás seguro que deseas cancelar este turno?",
+        "cancel_success": "Turno cancelado exitosamente.",
+        "cancel_error": "No se pudo cancelar. Puede que sea muy tarde.",
+        "no_appointments": "No tienes turnos próximos.",
+        "status": "Estado",
+        "completed": "Completado",
+        "my_account": "Mi Cuenta"
     }
 }

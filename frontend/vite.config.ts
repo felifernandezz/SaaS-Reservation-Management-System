@@ -17,5 +17,14 @@ export default defineConfig({
         secure: false,
       }
     }
+  },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        quietDeps: true,
+        // silences warning about legacy js api etc
+        silenceDeprecations: ['legacy-js-api', 'import', 'global-builtin', 'color-functions', 'mixed-decls'],
+      }
+    }
   }
 })

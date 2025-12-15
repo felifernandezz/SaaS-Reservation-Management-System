@@ -9,6 +9,7 @@ import axios from 'axios';
 
 import 'moment/locale/es'; // Import Spanish locale
 import CreateAppointmentModal from '../components/calendar/CreateAppointmentModal';
+import ConfirmModal from '../components/ConfirmModal';
 
 // Setup the localizer by providing the moment (or globalize, or Date) Object
 moment.locale('es'); // Set default locale to Spanish
@@ -23,6 +24,7 @@ const CalendarView: React.FC = () => {
     // Modal State
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
     const [showModal, setShowModal] = useState(false);
+    const [showCancelModal, setShowCancelModal] = useState(false);
 
     // Create Modal State
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -63,19 +65,21 @@ const CalendarView: React.FC = () => {
         setShowModal(true);
     };
 
-    const handleCancelAppointment = async () => {
+    const handleCancelClick = () => {
+        setShowCancelModal(true);
+    };
+
+    const executeCancel = async () => {
         if (!selectedEvent) return;
-        if (window.confirm("¿Seguro que deseas cancelar este turno?")) {
-            try {
-                const token = localStorage.getItem('token');
-                await axios.delete(`/api/v1/appointments/${selectedEvent.id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setShowModal(false);
-                fetchData(); // Refresh
-            } catch (error: any) {
-                alert(error.response?.data?.detail || "Error al cancelar");
-            }
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`/api/v1/appointments/${selectedEvent.id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setShowModal(false);
+            fetchData(); // Refresh
+        } catch (error: any) {
+            alert(error.response?.data?.detail || "Error al cancelar");
         }
     };
 
@@ -162,7 +166,12 @@ const CalendarView: React.FC = () => {
                     )}
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="danger" onClick={handleCancelAppointment}>
+                    <Button
+                        variant="danger"
+                        onClick={handleCancelClick}
+                        disabled={moment(selectedEvent?.end).isBefore(moment())}
+                        title={moment(selectedEvent?.end).isBefore(moment()) ? "No se puede cancelar un turno pasado" : "Cancelar Turno"}
+                    >
                         Cancelar Turno
                     </Button>
                     <Button variant="secondary" onClick={() => setShowModal(false)}>
@@ -170,6 +179,14 @@ const CalendarView: React.FC = () => {
                     </Button>
                 </Modal.Footer>
             </Modal>
+
+            <ConfirmModal
+                show={showCancelModal}
+                onHide={() => setShowCancelModal(false)}
+                onConfirm={executeCancel}
+                title="Cancelar Turno"
+                body="¿Realmente deseas cancelar esta cita? El horario quedará libre nuevamente."
+            />
 
             {/* Create Appointment Modal (Placeholder) */}
             {/* Create Appointment Modal */}

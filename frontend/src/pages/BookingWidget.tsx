@@ -28,36 +28,30 @@ const BookingWidget: React.FC = () => {
     const [progress, setProgress] = useState(10);
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
     const [selectedServiceName, setSelectedServiceName] = useState<string>('');
-    const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null); // New
+    const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
     const [selectedDateTime, setSelectedDateTime] = useState<{ date: string, time: string } | null>(null);
     const [guestData, setGuestData] = useState({ firstName: '', lastName: '', email: '', phone: '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const [isMember, setIsMember] = useState(false);
-
     const [staffList, setStaffList] = useState<any[]>([]);
 
     useEffect(() => {
-        // Check if already logged in
         const token = localStorage.getItem('customer_token');
         if (token) {
             setIsMember(true);
-            setStep(BookingStep.SERVICE_SELECTION); // Skip user type selection
+            setStep(BookingStep.SERVICE_SELECTION);
         }
     }, []);
 
     useEffect(() => {
-        // Fetch Staff when step is STAFF_SELECTION and service is selected
         if (step === BookingStep.STAFF_SELECTION && selectedServiceId) {
             const fetchStaff = async () => {
                 try {
-                    const tenantId = 1;
+                    const tenantId = theme?.id || 1;
                     const response = await axios.get(`/api/v1/users/public`, {
-                        params: {
-                            tenant_id: tenantId,
-                            service_id: selectedServiceId
-                        }
+                        params: { tenant_id: tenantId, service_id: selectedServiceId }
                     });
                     setStaffList(response.data);
                 } catch (err) {
@@ -66,7 +60,7 @@ const BookingWidget: React.FC = () => {
             };
             fetchStaff();
         }
-    }, [step, selectedServiceId]);
+    }, [step, selectedServiceId, theme]);
 
     const handleServiceSelect = (service: any) => {
         setSelectedServiceId(service.id);
@@ -99,20 +93,16 @@ const BookingWidget: React.FC = () => {
 
     const handleConfirm = async () => {
         if (!selectedServiceId || !selectedDateTime) return;
-
         setLoading(true);
         setError(null);
-
         try {
             const payload: any = {
                 service_id: selectedServiceId,
                 start_time: `${selectedDateTime.date}T${selectedDateTime.time}:00`,
-                staff_id: selectedStaffId // Optional
+                staff_id: selectedStaffId
             };
 
             if (isMember) {
-                // Get customer ID from token (backend should handle this via /me or we decode here)
-                // For now, let's fetch /me to get ID or send token in header
                 const token = localStorage.getItem('customer_token');
                 const meResponse = await axios.get('/api/v1/auth/customer/me', {
                     headers: { Authorization: `Bearer ${token}` }
@@ -146,26 +136,38 @@ const BookingWidget: React.FC = () => {
             case BookingStep.USER_TYPE_SELECTION:
                 return (
                     <div className="text-center">
-                        <h3 className="mb-4">Welcome! How would you like to book?</h3>
+                        <h3 className="mb-4">{theme?.allowGuestCheckout ? t('booking.welcome_title') : "Bienvenido. Inicia sesión para reservar."}</h3>
                         <Row className="g-4 justify-content-center">
                             <Col md={5}>
                                 <Card className="h-100 shadow-sm hover-card" onClick={() => { setIsMember(true); navigate('/portal/login'); }} style={{ cursor: 'pointer' }}>
-                                    <Card.Body className="d-flex flex-column justify-content-center align-items-center p-5">
-                                        <h4>Customer Login</h4>
-                                        <p className="text-muted">Log in to your account</p>
-                                        <Button variant="outline-primary">Login</Button>
+                                    <Card.Body className="d-flex flex-column justify-content-center align-items-center p-4">
+                                        <h4>{t('booking.login_customer')}</h4>
+                                        <p className="text-muted">{t('booking.login_desc')}</p>
+                                        <Button variant="outline-primary">{t('booking.login_btn')}</Button>
                                     </Card.Body>
                                 </Card>
                             </Col>
-                            <Col md={5}>
-                                <Card className="h-100 shadow-sm hover-card" onClick={() => { setIsMember(false); nextStep(); }} style={{ cursor: 'pointer' }}>
-                                    <Card.Body className="d-flex flex-column justify-content-center align-items-center p-5">
-                                        <h4>New Guest</h4>
-                                        <p className="text-muted">Book a single session</p>
-                                        <Button variant="primary">Continue as Guest</Button>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
+                            {theme?.allowGuestCheckout ? (
+                                <Col md={5}>
+                                    <Card className="h-100 shadow-sm hover-card" onClick={() => { setIsMember(false); nextStep(); }} style={{ cursor: 'pointer' }}>
+                                        <Card.Body className="d-flex flex-column justify-content-center align-items-center p-4">
+                                            <h4>{t('booking.guest_customer')}</h4>
+                                            <p className="text-muted">{t('booking.guest_desc')}</p>
+                                            <Button variant="primary">{t('booking.continue_guest')}</Button>
+                                        </Card.Body>
+                                    </Card>
+                                </Col>
+                            ) : (
+                                <Col md={5}>
+                                     <Card className="h-100 shadow-sm hover-card" onClick={() => { navigate('/portal/register'); }} style={{ cursor: 'pointer' }}>
+                                        <Card.Body className="d-flex flex-column justify-content-center align-items-center p-4">
+                                            <h4>Nuevo Usuario</h4>
+                                            <p className="text-muted">{t('booking.register_desc')}</p>
+                                            <Button variant="primary">{t('booking.register_btn')}</Button>
+                                        </Card.Body>
+                                    </Card>
+                                </Col>
+                            )}
                         </Row>
                     </div>
                 );
@@ -174,13 +176,13 @@ const BookingWidget: React.FC = () => {
             case BookingStep.STAFF_SELECTION:
                 return (
                     <div className="text-center">
-                        <h4>Select a Trainer (Optional)</h4>
+                        <h4>{t('booking.select_staff')} (Opcional)</h4>
                         <div className="d-flex flex-wrap justify-content-center gap-3 mt-4">
                             <Button
                                 variant={selectedStaffId === null ? "primary" : "outline-secondary"}
                                 onClick={() => handleStaffSelect(null)}
                             >
-                                Any Trainer
+                                {t('booking.any_staff')}
                             </Button>
                             {staffList.map((staff: any) => (
                                 <Button
@@ -196,17 +198,10 @@ const BookingWidget: React.FC = () => {
                 );
             case BookingStep.DATE_TIME_SELECTION:
                 return selectedServiceId ? (
-                    <DateTimeSelection
-                        serviceId={selectedServiceId}
-                        staffId={selectedStaffId}
-                        onSelect={handleDateTimeSelect}
-                    />
+                    <DateTimeSelection serviceId={selectedServiceId} staffId={selectedStaffId} onSelect={handleDateTimeSelect} />
                 ) : null;
             case BookingStep.GUEST_DETAILS:
-                if (isMember) {
-                    nextStep(); // Skip if member
-                    return null;
-                }
+                if (isMember) { nextStep(); return null; }
                 return <GuestDetails data={guestData} onChange={setGuestData} />;
             case BookingStep.CONFIRMATION:
                 return (
@@ -214,8 +209,8 @@ const BookingWidget: React.FC = () => {
                         serviceName={selectedServiceName}
                         date={selectedDateTime?.date || ''}
                         time={selectedDateTime?.time || ''}
-                        guestName={isMember ? "Member" : `${guestData.firstName} ${guestData.lastName}`}
-                        guestEmail={isMember ? "Logged In" : guestData.email}
+                        guestName={isMember ? "Miembro Registrado" : `${guestData.firstName} ${guestData.lastName}`}
+                        guestEmail={isMember ? "Cuenta Verificada" : guestData.email}
                     />
                 );
             default:
@@ -227,14 +222,12 @@ const BookingWidget: React.FC = () => {
         <Card className="shadow-lg border-0 mx-auto" style={{ maxWidth: '800px' }}>
             <Card.Body className="p-0">
                 <ProgressBar now={progress} variant="success" style={{ height: '5px' }} />
-
                 <div className="p-4">
                     {error && <Alert variant="danger">{error}</Alert>}
-
                     {success ? (
                         <div className="text-center py-5">
                             <h2 className="text-success mb-3">{t('booking.booking_confirmed')}</h2>
-                            <p>{t('booking.thank_you', { name: isMember ? "Member" : guestData.firstName })}</p>
+                            <p>{t('booking.thank_you', { name: isMember ? "" : guestData.firstName })}</p>
                             <Button variant="primary" onClick={() => window.location.reload()}>{t('booking.book_another')}</Button>
                         </div>
                     ) : (
@@ -242,32 +235,22 @@ const BookingWidget: React.FC = () => {
                             {step !== BookingStep.USER_TYPE_SELECTION && (
                                 <h2 className="text-center mb-4 fw-bold text-dark">
                                     {step === BookingStep.SERVICE_SELECTION && t('booking.select_service')}
-                                    {step === BookingStep.STAFF_SELECTION && "Select Trainer"}
+                                    {step === BookingStep.STAFF_SELECTION && t('booking.select_staff')}
                                     {step === BookingStep.DATE_TIME_SELECTION && t('booking.select_time')}
                                     {step === BookingStep.GUEST_DETAILS && t('booking.your_details')}
                                     {step === BookingStep.CONFIRMATION && t('booking.confirmation')}
                                 </h2>
                             )}
-
                             {renderStepContent()}
-
                             <div className="d-flex justify-content-between mt-4">
                                 {step > BookingStep.USER_TYPE_SELECTION && (
-                                    <Button
-                                        variant="outline-secondary"
-                                        onClick={prevStep}
-                                        disabled={step === BookingStep.SERVICE_SELECTION && isMember} // Disable back if member started at service
-                                    >
+                                    <Button variant="outline-secondary" onClick={prevStep} disabled={step === BookingStep.SERVICE_SELECTION && isMember}>
                                         {t('common.back')}
                                     </Button>
                                 )}
-
                                 {step > BookingStep.USER_TYPE_SELECTION && step < BookingStep.CONFIRMATION && (
-                                    <Button variant="primary" onClick={nextStep}>
-                                        {t('common.next')}
-                                    </Button>
+                                    <Button variant="primary" onClick={nextStep}>{t('common.next')}</Button>
                                 )}
-
                                 {step === BookingStep.CONFIRMATION && (
                                     <Button variant="success" onClick={handleConfirm} disabled={loading}>
                                         {loading ? <Spinner animation="border" size="sm" /> : t('common.confirm')}
@@ -281,5 +264,4 @@ const BookingWidget: React.FC = () => {
         </Card>
     );
 };
-
 export default BookingWidget;

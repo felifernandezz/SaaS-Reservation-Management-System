@@ -11,9 +11,14 @@ const MainLayout = () => {
     };
 
     return (
-        <div className="d-flex">
-            <Sidebar />
-            <div className="flex-grow-1 p-4" style={{ backgroundColor: '#f8f9fa' }}>
+        <div className="d-flex" style={{ minHeight: '100vh' }}>
+            {/* Sidebar Sticky Wrapper */}
+            <div style={{ position: 'sticky', top: 0, height: '100vh', overflowY: 'auto', zIndex: 1000 }}>
+                <Sidebar />
+            </div>
+            
+            {/* Main Content */}
+            <div className="flex-grow-1 p-4" style={{ backgroundColor: '#f8f9fa', minWidth: 0 }}>
                 <div className="d-flex justify-content-end mb-4">
                     <ButtonGroup size="sm">
                         <Button variant="outline-secondary" onClick={() => changeLanguage('es')} active={i18n.language === 'es'}>

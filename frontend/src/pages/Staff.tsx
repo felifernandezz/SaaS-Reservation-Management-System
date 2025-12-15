@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Container, Table, Spinner, Alert, Card, Button, Modal, Form, Badge } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
-import { FaEdit, FaTrash, FaPlus, FaCheck } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import ConfirmModal from '../components/ConfirmModal';
 
 interface User {
     id: number;
@@ -19,11 +20,15 @@ const Staff: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Modal State
+    // Modal Form State
     const [showModal, setShowModal] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [formData, setFormData] = useState({ email: '', full_name: '', password: '' });
     const [selectedServiceIds, setSelectedServiceIds] = useState<number[]>([]);
+
+    // Delete Modal State
+    const [showDelete, setShowDelete] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<number | null>(null);
 
     useEffect(() => {
         fetchData();
@@ -33,12 +38,10 @@ const Staff: React.FC = () => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            
             const [staffRes, servicesRes] = await Promise.all([
                 axios.get('/api/v1/users/', config),
                 axios.get('/api/v1/services/', config)
             ]);
-            
             setStaff(staffRes.data);
             setAllServices(servicesRes.data);
         } catch (err) {
@@ -65,9 +68,9 @@ const Staff: React.FC = () => {
     const handleClose = () => setShowModal(false);
 
     const handleServiceToggle = (serviceId: number) => {
-        setSelectedServiceIds(prev => 
-            prev.includes(serviceId) 
-                ? prev.filter(id => id !== serviceId) 
+        setSelectedServiceIds(prev =>
+            prev.includes(serviceId)
+                ? prev.filter(id => id !== serviceId)
                 : [...prev, serviceId]
         );
     };
@@ -76,10 +79,8 @@ const Staff: React.FC = () => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            
             let userId;
 
-            // 1. Guardar Usuario
             if (editingUser) {
                 await axios.put(`/api/v1/users/${editingUser.id}`, { ...formData, tenant_id: 1 }, config);
                 userId = editingUser.id;
@@ -87,10 +88,7 @@ const Staff: React.FC = () => {
                 const res = await axios.post('/api/v1/users/', { ...formData, tenant_id: 1 }, config);
                 userId = res.data.id;
             }
-
-            // 2. Asignar Servicios
             await axios.post(`/api/v1/users/${userId}/services`, selectedServiceIds, config);
-
             fetchData();
             handleClose();
         } catch (err) {
@@ -99,14 +97,18 @@ const Staff: React.FC = () => {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (window.confirm("Are you sure?")) {
-            try {
-                const token = localStorage.getItem('token');
-                await axios.delete(`/api/v1/users/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-                fetchData();
-            } catch (err) { setError("Error deleting."); }
-        }
+    const confirmDelete = (id: number) => {
+        setItemToDelete(id);
+        setShowDelete(true);
+    };
+
+    const executeDelete = async () => {
+        if (!itemToDelete) return;
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`/api/v1/users/${itemToDelete}`, { headers: { Authorization: `Bearer ${token}` } });
+            fetchData();
+        } catch (err) { setError("Error deleting staff."); }
     };
 
     if (loading) return <Spinner animation="border" />;
@@ -122,29 +124,29 @@ const Staff: React.FC = () => {
 
             <Card className="shadow-sm border-0">
                 <Card.Body className="p-0">
-                    <Table hover responsive className="mb-0 align-middle">
+                    <Table hover responsive className="mb-0">
                         <thead className="bg-light">
                             <tr>
                                 <th>Name</th>
                                 <th>Email</th>
-                                <th>Skills (Services)</th>
+                                <th>Skills</th>
                                 <th className="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {staff.map(user => (
                                 <tr key={user.id}>
-                                    <td className="fw-bold">{user.full_name}</td>
+                                    <td>{user.full_name}</td>
                                     <td>{user.email}</td>
                                     <td>
-                                        {user.services && user.services.length > 0 
+                                        {user.services && user.services.length > 0
                                             ? user.services.map(s => <Badge key={s.id} bg="info" className="me-1">{s.name}</Badge>)
-                                            : <Badge bg="secondary">Generalist (All)</Badge>
+                                            : <Badge bg="secondary">Generalist</Badge>
                                         }
                                     </td>
                                     <td className="text-end">
                                         <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleShow(user)}><FaEdit /></Button>
-                                        <Button variant="outline-danger" size="sm" onClick={() => handleDelete(user.id)}><FaTrash /></Button>
+                                        <Button variant="outline-danger" size="sm" onClick={() => confirmDelete(user.id)}><FaTrash /></Button>
                                     </td>
                                 </tr>
                             ))}
@@ -153,20 +155,19 @@ const Staff: React.FC = () => {
                 </Card.Body>
             </Card>
 
+            {/* Edit Modal */}
             <Modal show={showModal} onHide={handleClose}>
                 <Modal.Header closeButton><Modal.Title>{editingUser ? 'Edit Staff' : 'New Staff'}</Modal.Title></Modal.Header>
                 <Modal.Body>
                     <Form>
-                        <Form.Group className="mb-3"><Form.Label>Full Name</Form.Label><Form.Control type="text" value={formData.full_name} onChange={(e) => setFormData({...formData, full_name: e.target.value})} /></Form.Group>
-                        <Form.Group className="mb-3"><Form.Label>Email</Form.Label><Form.Control type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} /></Form.Group>
-                        <Form.Group className="mb-3"><Form.Label>Password</Form.Label><Form.Control type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} /></Form.Group>
-                        
+                        <Form.Group className="mb-3"><Form.Label>Full Name</Form.Label><Form.Control type="text" value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} /></Form.Group>
+                        <Form.Group className="mb-3"><Form.Label>Email</Form.Label><Form.Control type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} /></Form.Group>
+                        <Form.Group className="mb-3"><Form.Label>Password {editingUser && '(Optional)'}</Form.Label><Form.Control type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} /></Form.Group>
                         <hr />
                         <h6 className="mb-3">Authorized Services</h6>
-                        <div className="border rounded p-3 bg-light" style={{maxHeight: '200px', overflowY: 'auto'}}>
-                            {allServices.length === 0 && <p className="text-muted small">No services created yet.</p>}
+                        <div className="border rounded p-3 bg-light" style={{ maxHeight: '200px', overflowY: 'auto' }}>
                             {allServices.map(service => (
-                                <Form.Check 
+                                <Form.Check
                                     key={service.id}
                                     type="switch"
                                     id={`srv-${service.id}`}
@@ -177,7 +178,6 @@ const Staff: React.FC = () => {
                                 />
                             ))}
                         </div>
-                        <Form.Text className="text-muted">If none selected, staff can perform ALL services.</Form.Text>
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>
@@ -185,6 +185,15 @@ const Staff: React.FC = () => {
                     <Button variant="primary" onClick={handleSave}>Save Changes</Button>
                 </Modal.Footer>
             </Modal>
+
+            {/* Confirm Delete Modal */}
+            <ConfirmModal
+                show={showDelete}
+                onHide={() => setShowDelete(false)}
+                onConfirm={executeDelete}
+                title="Eliminar Personal"
+                body="¿Estás seguro que deseas eliminar a este miembro del staff? Esta acción no se puede deshacer."
+            />
         </Container>
     );
 };
